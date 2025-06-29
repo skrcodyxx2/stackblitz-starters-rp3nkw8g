@@ -17,7 +17,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, profile } = useAuth();
   const navigate = useNavigate();
 
   const {
@@ -38,12 +38,22 @@ export default function LoginPage() {
       await signIn(data.email, data.password);
       toast.success('Connexion réussie !');
       
-      // Redirect to admin dashboard if it's the admin user
-      if (data.email === 'vfreud@yahoo.com') {
-        navigate('/admin');
-      } else {
-        navigate('/');
-      }
+      // Wait a moment for the profile to be loaded
+      setTimeout(() => {
+        // Check if the user is an admin
+        if (data.email === 'vfreud@yahoo.com') {
+          navigate('/admin');
+        } else {
+          // Check profile role for other users
+          if (profile?.role === 'admin') {
+            navigate('/admin');
+          } else if (profile?.role === 'employee') {
+            navigate('/admin');
+          } else {
+            navigate('/client');
+          }
+        }
+      }, 500);
     } catch (error: any) {
       console.error("Sign in error:", error);
       toast.error(error.message || 'Erreur lors de la connexion');

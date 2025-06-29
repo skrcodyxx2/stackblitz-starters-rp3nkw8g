@@ -95,15 +95,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       console.log("Sign in successful:", data);
       
-      // If it's the admin user, make sure they have the admin role
+      // Set user metadata for admin users to avoid RLS recursion issues
       if (email === 'vfreud@yahoo.com' && data.user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({ role: 'admin' })
-          .eq('id', data.user.id);
+        try {
+          // Update user metadata to include role
+          await supabase.auth.updateUser({
+            data: { role: 'admin' }
+          });
           
-        if (profileError) {
-          console.error("Error updating admin role:", profileError);
+          // Also ensure profile has admin role
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({ 
+              role: 'admin',
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', data.user.id);
+            
+          if (profileError) {
+            console.error("Error updating admin role:", profileError);
+          }
+        } catch (metadataError) {
+          console.error("Error updating user metadata:", metadataError);
         }
       }
     } catch (error) {
@@ -120,7 +133,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         options: {
           data: {
             first_name: userData.first_name,
-            last_name: userData.last_name
+            last_name: userData.last_name,
+            role: 'client' // Always set role in metadata for new users
           }
         }
       });
@@ -128,17 +142,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       
       if (data.user) {
-        // Create profile
-        const { error: profileError } = await supabase
+        // Profile should be created by the trigger, but we'll check and create if needed
+        const { data: existingProfile } = await supabase
           .from('profiles')
-          .insert({
-            id: data.user.id,
-            email,
-            role: 'client',
-            ...userData,
-          });
-        
-        if (profileError) throw profileError;
+          .select('id')
+          .eq('id', data.user.id)
+          .single();
+          
+        if (!existingProfile) {
+          // Create profile manually if trigger failed
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              email,
+              role: 'client',
+              ...userData,
+            });
+          
+          if (profileError) throw profileError;
+        }
       }
     } catch (error) {
       console.error("Sign up error:", error);

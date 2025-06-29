@@ -286,7 +286,7 @@ export default function GalleryPage() {
 
       {/* Album Modal */}
       {selectedAlbum && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col">
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-40 flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-6 text-white">
             <div>
@@ -342,9 +342,9 @@ export default function GalleryPage() {
         </div>
       )}
 
-      {/* Lightbox */}
+      {/* Lightbox - Fixed positioning with higher z-index */}
       {selectedAlbum && selectedImageIndex !== null && selectedAlbum.gallery_images && (
-        <div className="fixed inset-0 bg-black bg-opacity-95 z-60 flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-4">
           <button
             onClick={closeLightbox}
             className="absolute top-4 right-4 text-white hover:text-gray-300 z-10 bg-black bg-opacity-50 p-2 rounded-full"

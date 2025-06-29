@@ -128,10 +128,10 @@ export default function HomePage() {
         ></div>
         <div className="relative container-custom section-padding">
           <div className="max-w-3xl">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 animate-fade-in text-white">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 animate-fade-in text-white text-shadow-lg">
               {settings.hero_title}
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-gray-100 animate-fade-in animation-delay-200">
+            <p className="text-xl md:text-2xl mb-8 text-gray-100 animate-fade-in animation-delay-200 text-shadow-md">
               {settings.hero_subtitle}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animation-delay-400">
@@ -212,7 +212,7 @@ export default function HomePage() {
               <div className="space-y-6">
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-primary-600 font-bold">🍽️</span>
+                    <span className="text-primary-600 font-bold text-xl">🍽️</span>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Service Traiteur Premium</h3>
@@ -222,7 +222,7 @@ export default function HomePage() {
                 
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-secondary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-secondary-600 font-bold">🎵</span>
+                    <span className="text-secondary-600 font-bold text-xl">🎵</span>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Animation & DJ</h3>
@@ -232,7 +232,7 @@ export default function HomePage() {
                 
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-accent-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-accent-600 font-bold">🎉</span>
+                    <span className="text-accent-600 font-bold text-xl">🎉</span>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Organisation d'Événements</h3>
@@ -309,7 +309,7 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="section-padding bg-gradient-to-r from-primary-600 to-secondary-600 text-white">
         <div className="container-custom text-center">
-          <h2 className="text-4xl font-bold mb-6 text-white">
+          <h2 className="text-4xl font-bold mb-6 text-white text-shadow-md">
             Prêt à Créer votre Événement Mémorable ?
           </h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto text-gray-100">

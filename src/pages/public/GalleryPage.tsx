@@ -148,8 +148,8 @@ export default function GalleryPage() {
                       className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
                     />
                   </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300"></div>
+                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
                     <h3 className="text-xl font-bold mb-2">{album.name}</h3>
                     <p className="text-sm text-gray-200 mb-2">{album.description}</p>
                     {album.event_date && (
@@ -198,7 +198,7 @@ export default function GalleryPage() {
                     <img
                       src={image.image_url}
                       alt={image.caption || ''}
-                      className="w-full h-32 object-cover rounded-lg group-hover:opacity-80 transition-opacity duration-200"
+                      className="w-full h-32 md:h-48 object-cover rounded-lg group-hover:opacity-80 transition-opacity duration-200"
                     />
                     {image.caption && (
                       <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white p-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">
@@ -217,21 +217,21 @@ export default function GalleryPage() {
         <div className="fixed inset-0 bg-black bg-opacity-95 z-60 flex items-center justify-center p-4">
           <button
             onClick={closeLightbox}
-            className="absolute top-4 right-4 text-white hover:text-gray-300 z-10"
+            className="absolute top-4 right-4 text-white hover:text-gray-300 z-10 bg-black bg-opacity-50 p-2 rounded-full"
           >
             <X className="w-8 h-8" />
           </button>
           
           <button
             onClick={prevImage}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 z-10"
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 z-10 bg-black bg-opacity-50 p-2 rounded-full"
           >
             <ChevronLeft className="w-8 h-8" />
           </button>
           
           <button
             onClick={nextImage}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 z-10"
+            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 z-10 bg-black bg-opacity-50 p-2 rounded-full"
           >
             <ChevronRight className="w-8 h-8" />
           </button>
@@ -240,13 +240,13 @@ export default function GalleryPage() {
             <img
               src={selectedAlbum.gallery_images[selectedImageIndex].image_url}
               alt={selectedAlbum.gallery_images[selectedImageIndex].caption || ''}
-              className="max-w-full max-h-full object-contain rounded-lg"
+              className="max-w-full max-h-[80vh] object-contain rounded-lg"
             />
             
             {selectedAlbum.gallery_images[selectedImageIndex].caption && (
               <div className="absolute bottom-4 left-4 right-4 text-white text-center bg-black bg-opacity-70 p-4 rounded-lg">
                 <p className="text-lg">{selectedAlbum.gallery_images[selectedImageIndex].caption}</p>
-                <p className="text-sm text-gray-300">
+                <p className="text-sm text-gray-300 mt-2">
                   {selectedImageIndex + 1} / {selectedAlbum.gallery_images.length}
                 </p>
               </div>

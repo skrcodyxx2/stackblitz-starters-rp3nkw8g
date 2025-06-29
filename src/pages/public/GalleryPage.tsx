@@ -134,6 +134,8 @@ export default function GalleryPage() {
 
   const openAlbum = (album: Album) => {
     setSelectedAlbum(album);
+    // Reset selected image when opening an album
+    setSelectedImageIndex(null);
   };
 
   const closeAlbum = () => {
@@ -177,6 +179,24 @@ export default function GalleryPage() {
       return dateString;
     }
   };
+
+  // Handle keyboard navigation for lightbox
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (selectedImageIndex === null) return;
+      
+      if (e.key === 'ArrowRight') {
+        nextImage();
+      } else if (e.key === 'ArrowLeft') {
+        prevImage();
+      } else if (e.key === 'Escape') {
+        closeLightbox();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedImageIndex, selectedAlbum]);
 
   if (loading) {
     return (
@@ -286,7 +306,7 @@ export default function GalleryPage() {
 
       {/* Album Modal */}
       {selectedAlbum && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-40 flex flex-col">
+        <div className="fixed inset-0 bg-black bg-opacity-90 z-40 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="flex items-center justify-between p-6 text-white">
             <div>
@@ -299,6 +319,7 @@ export default function GalleryPage() {
             <button
               onClick={closeAlbum}
               className="text-white hover:text-gray-300 p-2 bg-black bg-opacity-50 rounded-full"
+              aria-label="Fermer l'album"
             >
               <X className="w-8 h-8" />
             </button>
@@ -342,12 +363,21 @@ export default function GalleryPage() {
         </div>
       )}
 
-      {/* Lightbox - Fixed positioning with higher z-index */}
+      {/* Lightbox - Completely separate from album view */}
       {selectedAlbum && selectedImageIndex !== null && selectedAlbum.gallery_images && (
-        <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-4">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            // Close lightbox when clicking outside the image
+            if (e.target === e.currentTarget) {
+              closeLightbox();
+            }
+          }}
+        >
           <button
             onClick={closeLightbox}
             className="absolute top-4 right-4 text-white hover:text-gray-300 z-10 bg-black bg-opacity-50 p-2 rounded-full"
+            aria-label="Fermer"
           >
             <X className="w-8 h-8" />
           </button>
@@ -355,6 +385,7 @@ export default function GalleryPage() {
           <button
             onClick={prevImage}
             className="absolute left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 z-10 bg-black bg-opacity-50 p-2 rounded-full"
+            aria-label="Image précédente"
           >
             <ChevronLeft className="w-8 h-8" />
           </button>
@@ -362,11 +393,12 @@ export default function GalleryPage() {
           <button
             onClick={nextImage}
             className="absolute right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 z-10 bg-black bg-opacity-50 p-2 rounded-full"
+            aria-label="Image suivante"
           >
             <ChevronRight className="w-8 h-8" />
           </button>
           
-          <div className="max-w-4xl max-h-full flex flex-col items-center">
+          <div className="max-w-5xl max-h-full flex flex-col items-center">
             <img
               src={selectedAlbum.gallery_images[selectedImageIndex].image_url}
               alt={selectedAlbum.gallery_images[selectedImageIndex].caption || ''}

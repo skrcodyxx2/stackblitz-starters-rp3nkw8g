@@ -34,6 +34,7 @@ const defaultSettings: CompanySettings = {
 
 export default function Footer() {
   const [settings, setSettings] = useState<CompanySettings>(defaultSettings);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     fetchCompanySettings();
@@ -41,13 +42,22 @@ export default function Footer() {
 
   const fetchCompanySettings = async () => {
     try {
-      const { data, error } = await supabase
+      setIsLoading(true);
+      
+      // Add timeout to prevent hanging requests
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      );
+
+      const fetchPromise = supabase
         .from('company_settings')
         .select('name, slogan, description, address, phone, email, social_media')
         .limit(1);
 
+      const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+
       if (error) {
-        console.error('Erreur Supabase:', error);
+        console.warn('Unable to fetch company settings from database, using defaults:', error.message);
         return; // Use default settings
       }
 
@@ -64,10 +74,32 @@ export default function Footer() {
         });
       }
     } catch (error) {
-      console.error('Erreur lors du chargement des paramètres:', error);
-      // Keep default settings on error
+      // Handle network errors gracefully
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        console.warn('Network error: Unable to connect to database. Using default company settings.');
+      } else if (error instanceof Error && error.message === 'Request timeout') {
+        console.warn('Database request timed out. Using default company settings.');
+      } else {
+        console.warn('Error loading company settings:', error);
+      }
+      // Keep default settings on any error
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  // Don't render until we've attempted to load settings
+  if (isLoading) {
+    return (
+      <footer className="bg-gray-900 text-white">
+        <div className="container-custom section-padding">
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-400"></div>
+          </div>
+        </div>
+      </footer>
+    );
+  }
 
   return (
     <footer className="bg-gray-900 text-white">

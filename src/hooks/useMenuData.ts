@@ -1,36 +1,5 @@
 import { useState, useEffect } from 'react';
-import { menuCategoriesApi, menuItemsApi } from '../lib/api.js';
-import toast from 'react-hot-toast';
-
-interface MenuCategory {
-  id: string;
-  name: string;
-  description: string | null;
-  image_url: string | null;
-  sort_order: number;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-interface MenuItem {
-  id: string;
-  category_id: string | null;
-  category_name?: string;
-  name: string;
-  description: string | null;
-  price: number | null;
-  image_url: string | null;
-  ingredients: string[] | null;
-  allergens: string[] | null;
-  preparation_time: number | null;
-  calories: number | null;
-  is_available: boolean;
-  is_festive: boolean;
-  sort_order: number;
-  created_at: string;
-  updated_at: string;
-}
+import type { MenuCategory, MenuItem } from '../lib/database';
 
 export function useMenuData() {
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -40,25 +9,25 @@ export function useMenuData() {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await menuCategoriesApi.getAll();
-
-      if (error) throw new Error(error);
+      const response = await fetch('/api/menu/categories');
+      if (!response.ok) throw new Error('Erreur lors du chargement des catégories');
+      
+      const data = await response.json();
       setCategories(data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement des catégories');
-      toast.error('Erreur lors du chargement des catégories');
     }
   };
 
   const fetchMenuItems = async () => {
     try {
-      const { data, error } = await menuItemsApi.getAll();
-
-      if (error) throw new Error(error);
+      const response = await fetch('/api/menu/items');
+      if (!response.ok) throw new Error('Erreur lors du chargement du menu');
+      
+      const data = await response.json();
       setMenuItems(data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement du menu');
-      toast.error('Erreur lors du chargement du menu');
     }
   };
 

@@ -3,24 +3,11 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Star, Users, Clock, Award } from 'lucide-react';
 import Header from '../../components/common/Header';
 import Footer from '../../components/common/Footer';
-import { supabase } from '../../lib/supabase';
-
-interface CompanySettings {
-  hero_title: string;
-  hero_subtitle: string;
-  hero_image_url: string;
-  about_us: string;
-}
-
-const defaultSettings: CompanySettings = {
-  hero_title: 'Saveurs Authentiques Caribéennes',
-  hero_subtitle: 'Service traiteur haut de gamme spécialisé dans la cuisine haïtienne et caribéenne. Nous créons des expériences culinaires mémorables pour tous vos événements.',
-  hero_image_url: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop',
-  about_us: 'Dounie Cuisine Pro est une entreprise familiale spécialisée dans la cuisine haïtienne et caribéenne. Nous offrons des services de traiteur haut de gamme pour tous vos événements spéciaux.'
-};
+import { apiService } from '../../lib/api';
+import type { CompanySettings } from '../../lib/database';
 
 export default function HomePage() {
-  const [settings, setSettings] = useState<CompanySettings>(defaultSettings);
+  const [settings, setSettings] = useState<CompanySettings | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,29 +16,10 @@ export default function HomePage() {
 
   const fetchCompanySettings = async () => {
     try {
-      const { data, error } = await supabase
-        .from('company_settings')
-        .select('hero_title, hero_subtitle, hero_image_url, about_us')
-        .limit(1);
-
-      if (error) {
-        console.error('Erreur Supabase:', error);
-        setLoading(false);
-        return; // Use default settings
-      }
-
-      if (data && data.length > 0) {
-        const dbSettings = data[0];
-        setSettings({
-          hero_title: dbSettings.hero_title || defaultSettings.hero_title,
-          hero_subtitle: dbSettings.hero_subtitle || defaultSettings.hero_subtitle,
-          hero_image_url: dbSettings.hero_image_url || defaultSettings.hero_image_url,
-          about_us: dbSettings.about_us || defaultSettings.about_us
-        });
-      }
+      const data = apiService.getCompanySettings();
+      setSettings(data);
     } catch (error) {
       console.error('Erreur lors du chargement des paramètres:', error);
-      // Keep default settings on error
     } finally {
       setLoading(false);
     }
@@ -123,16 +91,16 @@ export default function HomePage() {
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat"
           style={{
-            backgroundImage: `url(${settings.hero_image_url})`
+            backgroundImage: `url(${settings?.hero_image_url || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop'})`
           }}
         ></div>
         <div className="relative container-custom section-padding">
           <div className="max-w-3xl">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 animate-fade-in text-white text-shadow-lg">
-              {settings.hero_title}
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 animate-fade-in text-white">
+              {settings?.hero_title || 'Saveurs Authentiques Caribéennes'}
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-gray-100 animate-fade-in animation-delay-200 text-shadow-md">
-              {settings.hero_subtitle}
+            <p className="text-xl md:text-2xl mb-8 text-gray-100 animate-fade-in animation-delay-200">
+              {settings?.hero_subtitle || 'Service traiteur haut de gamme spécialisé dans la cuisine haïtienne et caribéenne. Nous créons des expériences culinaires mémorables pour tous vos événements.'}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 animate-fade-in animation-delay-400">
               <Link to="/menu" className="btn-primary inline-flex items-center justify-center">
@@ -190,7 +158,7 @@ export default function HomePage() {
               À Propos de Nous
             </h2>
             <p className="text-lg text-gray-700 leading-relaxed">
-              {settings.about_us}
+              {settings?.about_us || 'Dounie Cuisine Pro est une entreprise familiale spécialisée dans la cuisine haïtienne et caribéenne. Nous offrons des services de traiteur haut de gamme pour tous vos événements spéciaux.'}
             </p>
           </div>
         </div>
@@ -212,7 +180,7 @@ export default function HomePage() {
               <div className="space-y-6">
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-primary-600 font-bold text-xl">🍽️</span>
+                    <span className="text-primary-600 font-bold">🍽️</span>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Service Traiteur Premium</h3>
@@ -222,7 +190,7 @@ export default function HomePage() {
                 
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-secondary-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-secondary-600 font-bold text-xl">🎵</span>
+                    <span className="text-secondary-600 font-bold">🎵</span>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Animation & DJ</h3>
@@ -232,7 +200,7 @@ export default function HomePage() {
                 
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-accent-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <span className="text-accent-600 font-bold text-xl">🎉</span>
+                    <span className="text-accent-600 font-bold">🎉</span>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900 mb-2">Organisation d'Événements</h3>
@@ -309,7 +277,7 @@ export default function HomePage() {
       {/* CTA Section */}
       <section className="section-padding bg-gradient-to-r from-primary-600 to-secondary-600 text-white">
         <div className="container-custom text-center">
-          <h2 className="text-4xl font-bold mb-6 text-white text-shadow-md">
+          <h2 className="text-4xl font-bold mb-6 text-white">
             Prêt à Créer votre Événement Mémorable ?
           </h2>
           <p className="text-xl mb-8 max-w-2xl mx-auto text-gray-100">

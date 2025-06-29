@@ -1,36 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { signIn, signUp, signOut, getCurrentUser, updateProfile as updateUserProfile } from '../lib/auth.js';
-import toast from 'react-hot-toast';
-
-interface User {
-  id: string;
-  email: string;
-  role: string;
-}
-
-interface Profile {
-  id: string;
-  email: string;
-  first_name: string | null;
-  last_name: string | null;
-  phone: string | null;
-  role: 'admin' | 'employee' | 'client';
-  avatar_url: string | null;
-  created_at: string;
-  updated_at: string;
-  is_active: boolean;
-  must_change_password: boolean;
-}
+import type { User } from '../lib/database';
 
 interface AuthContextType {
-  user: User | null;
-  profile: Profile | null;
-  token: string | null;
+  user: Omit<User, 'password_hash'> | null;
+  profile: Omit<User, 'password_hash'> | null;
+  session: { token: string; expires_at: string } | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, userData: Partial<Profile>) => Promise<void>;
+  signUp: (email: string, password: string, userData: Partial<User>) => Promise<void>;
   signOut: () => Promise<void>;
-  updateProfile: (updates: Partial<Profile>) => Promise<void>;
+  updateProfile: (updates: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,138 +23,158 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('auth_token'));
+  const [user, setUser] = useState<Omit<User, 'password_hash'> | null>(null);
+  const [profile, setProfile] = useState<Omit<User, 'password_hash'> | null>(null);
+  const [session, setSession] = useState<{ token: string; expires_at: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Récupérer l'utilisateur actuel si un token existe
-    const fetchCurrentUser = async () => {
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
+    // Récupérer la session depuis localStorage
+    const storedSession = localStorage.getItem('auth_session');
+    if (storedSession) {
       try {
-        const { data, error } = await getCurrentUser(token);
-        
-        if (error) {
-          console.error('Erreur lors de la récupération de l\'utilisateur:', error);
-          localStorage.removeItem('auth_token');
-          setToken(null);
-          setUser(null);
-          setProfile(null);
-          toast.error('Votre session a expiré. Veuillez vous reconnecter.');
-        } else if (data) {
-          setUser(data.user);
-          setProfile(data.profile);
-        }
+        const parsedSession = JSON.parse(storedSession);
+        setSession(parsedSession);
+        fetchProfile(parsedSession.token);
       } catch (error) {
-        console.error('Erreur inattendue:', error);
-      } finally {
+        console.error('Erreur lors de la récupération de la session:', error);
+        localStorage.removeItem('auth_session');
         setLoading(false);
       }
-    };
-
-    fetchCurrentUser();
-  }, [token]);
-
-  const handleSignIn = async (email: string, password: string) => {
-    try {
-      const { data, error } = await signIn(email, password);
-      
-      if (error) throw error;
-      
-      if (data) {
-        setUser(data.user);
-        setProfile(data.profile);
-        setToken(data.token);
-        localStorage.setItem('auth_token', data.token);
-        toast.success('Connexion réussie !');
-      }
-    } catch (error: any) {
-      console.error('Erreur de connexion:', error);
-      toast.error(error.message || 'Erreur lors de la connexion');
-      throw error;
+    } else {
+      setLoading(false);
     }
-  };
+  }, []);
 
-  const handleSignUp = async (email: string, password: string, userData: Partial<Profile>) => {
+  const fetchProfile = async (token: string) => {
     try {
-      const { data, error } = await signUp(email, password, userData);
-      
-      if (error) throw error;
-      
-      if (data) {
-        setUser(data.user);
-        setToken(data.token);
-        localStorage.setItem('auth_token', data.token);
-        
-        // Récupérer le profil complet
-        const profileResult = await getCurrentUser(data.token);
-        if (profileResult.data) {
-          setProfile(profileResult.data.profile);
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-        
-        toast.success('Compte créé avec succès !');
-      }
-    } catch (error: any) {
-      console.error('Erreur d\'inscription:', error);
-      toast.error(error.message || 'Erreur lors de la création du compte');
-      throw error;
-    }
-  };
+      });
 
-  const handleSignOut = async () => {
-    try {
-      if (token) {
-        await signOut(token);
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+        setProfile(userData);
+      } else {
+        // Session expirée ou invalide
+        localStorage.removeItem('auth_session');
+        setSession(null);
+        setUser(null);
+        setProfile(null);
       }
-      
-      localStorage.removeItem('auth_token');
-      setToken(null);
+    } catch (error) {
+      console.error('Erreur lors de la récupération du profil:', error);
+      localStorage.removeItem('auth_session');
+      setSession(null);
       setUser(null);
       setProfile(null);
-      toast.success('Déconnexion réussie');
-    } catch (error: any) {
-      console.error('Erreur de déconnexion:', error);
-      toast.error(error.message || 'Erreur lors de la déconnexion');
-      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleUpdateProfile = async (updates: Partial<Profile>) => {
-    if (!user || !token) {
-      toast.error('Vous devez être connecté pour mettre à jour votre profil');
-      throw new Error('Non authentifié');
+  const signIn = async (email: string, password: string) => {
+    const response = await fetch('/api/auth/signin', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Erreur lors de la connexion');
     }
+
+    const { user: userData, session: sessionData } = await response.json();
     
-    try {
-      const { data, error } = await updateUserProfile(user.id, updates, token);
-      
-      if (error) throw error;
-      
-      if (data) {
-        setProfile(prev => prev ? { ...prev, ...data } : data);
-        toast.success('Profil mis à jour avec succès !');
-      }
-    } catch (error: any) {
-      console.error('Erreur de mise à jour du profil:', error);
-      toast.error(error.message || 'Erreur lors de la mise à jour du profil');
-      throw error;
+    setUser(userData);
+    setProfile(userData);
+    setSession(sessionData);
+    
+    // Sauvegarder la session
+    localStorage.setItem('auth_session', JSON.stringify(sessionData));
+  };
+
+  const signUp = async (email: string, password: string, userData: Partial<User>) => {
+    const response = await fetch('/api/auth/signup', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password, userData })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Erreur lors de l\'inscription');
     }
+
+    const { user: newUser, session: sessionData } = await response.json();
+    
+    setUser(newUser);
+    setProfile(newUser);
+    setSession(sessionData);
+    
+    // Sauvegarder la session
+    localStorage.setItem('auth_session', JSON.stringify(sessionData));
+  };
+
+  const signOut = async () => {
+    if (session) {
+      try {
+        await fetch('/api/auth/signout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${session.token}`
+          }
+        });
+      } catch (error) {
+        console.error('Erreur lors de la déconnexion:', error);
+      }
+    }
+
+    setUser(null);
+    setProfile(null);
+    setSession(null);
+    localStorage.removeItem('auth_session');
+  };
+
+  const updateProfile = async (updates: Partial<User>) => {
+    if (!session) throw new Error('Non connecté');
+    
+    const response = await fetch('/api/auth/profile', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.token}`
+      },
+      body: JSON.stringify(updates)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || 'Erreur lors de la mise à jour');
+    }
+
+    const updatedUser = await response.json();
+    setUser(updatedUser);
+    setProfile(updatedUser);
   };
 
   const value = {
     user,
     profile,
-    token,
+    session,
     loading,
-    signIn: handleSignIn,
-    signUp: handleSignUp,
-    signOut: handleSignOut,
-    updateProfile: handleUpdateProfile,
+    signIn,
+    signUp,
+    signOut,
+    updateProfile,
   };
 
   return (

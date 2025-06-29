@@ -27,7 +27,15 @@ export default function HomePage() {
         .select('hero_title, hero_subtitle, hero_image_url, about_us')
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // If no rows exist (PGRST116), that's okay - we'll use default values
+        if (error.code === 'PGRST116') {
+          console.log('No company settings found, using defaults');
+          setLoading(false);
+          return;
+        }
+        throw error;
+      }
       setSettings(data);
     } catch (error) {
       console.error('Erreur lors du chargement des paramètres:', error);

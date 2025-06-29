@@ -21,7 +21,22 @@ export default function LegalPage() {
         .select('privacy_policy, terms_of_service')
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // If no rows exist (PGRST116), use default content
+        if (error.code === 'PGRST116') {
+          console.log('No company settings found, using defaults');
+          if (type === 'politique-confidentialite') {
+            setTitle('Politique de Confidentialité');
+            setContent('Notre politique de confidentialité sera mise à jour prochainement.');
+          } else if (type === 'conditions-utilisation') {
+            setTitle('Conditions d\'Utilisation');
+            setContent('Nos conditions d\'utilisation seront mises à jour prochainement.');
+          }
+          setLoading(false);
+          return;
+        }
+        throw error;
+      }
 
       if (type === 'politique-confidentialite') {
         setTitle('Politique de Confidentialité');

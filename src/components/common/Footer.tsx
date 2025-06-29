@@ -32,7 +32,14 @@ export default function Footer() {
         .select('name, slogan, description, address, phone, email, social_media')
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // If no rows exist (PGRST116), that's okay - we'll use default values
+        if (error.code === 'PGRST116') {
+          console.log('No company settings found, using defaults');
+          return;
+        }
+        throw error;
+      }
       setSettings(data);
     } catch (error) {
       console.error('Erreur lors du chargement des paramètres:', error);

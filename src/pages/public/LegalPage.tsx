@@ -19,31 +19,30 @@ export default function LegalPage() {
       const { data, error } = await supabase
         .from('company_settings')
         .select('privacy_policy, terms_of_service')
-        .single();
+        .limit(1);
 
       if (error) {
-        // If no rows exist (PGRST116), use default content
-        if (error.code === 'PGRST116') {
-          console.log('No company settings found, using defaults');
-          if (type === 'politique-confidentialite') {
-            setTitle('Politique de Confidentialité');
-            setContent('Notre politique de confidentialité sera mise à jour prochainement.');
-          } else if (type === 'conditions-utilisation') {
-            setTitle('Conditions d\'Utilisation');
-            setContent('Nos conditions d\'utilisation seront mises à jour prochainement.');
-          }
-          setLoading(false);
-          return;
-        }
         throw error;
       }
 
-      if (type === 'politique-confidentialite') {
-        setTitle('Politique de Confidentialité');
-        setContent(data.privacy_policy || 'Cette page sera mise à jour prochainement.');
-      } else if (type === 'conditions-utilisation') {
-        setTitle('Conditions d\'Utilisation');
-        setContent(data.terms_of_service || 'Cette page sera mise à jour prochainement.');
+      if (data && data.length > 0) {
+        const settings = data[0];
+        if (type === 'politique-confidentialite') {
+          setTitle('Politique de Confidentialité');
+          setContent(settings.privacy_policy || 'Cette page sera mise à jour prochainement.');
+        } else if (type === 'conditions-utilisation') {
+          setTitle('Conditions d\'Utilisation');
+          setContent(settings.terms_of_service || 'Cette page sera mise à jour prochainement.');
+        }
+      } else {
+        console.log('No company settings found, using defaults');
+        if (type === 'politique-confidentialite') {
+          setTitle('Politique de Confidentialité');
+          setContent('Notre politique de confidentialité sera mise à jour prochainement.');
+        } else if (type === 'conditions-utilisation') {
+          setTitle('Conditions d\'Utilisation');
+          setContent('Nos conditions d\'utilisation seront mises à jour prochainement.');
+        }
       }
     } catch (error) {
       console.error('Erreur lors du chargement:', error);

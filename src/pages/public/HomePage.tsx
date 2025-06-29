@@ -25,18 +25,17 @@ export default function HomePage() {
       const { data, error } = await supabase
         .from('company_settings')
         .select('hero_title, hero_subtitle, hero_image_url, about_us')
-        .single();
+        .limit(1);
 
       if (error) {
-        // If no rows exist (PGRST116), that's okay - we'll use default values
-        if (error.code === 'PGRST116') {
-          console.log('No company settings found, using defaults');
-          setLoading(false);
-          return;
-        }
         throw error;
       }
-      setSettings(data);
+
+      if (data && data.length > 0) {
+        setSettings(data[0]);
+      } else {
+        console.log('No company settings found, using defaults');
+      }
     } catch (error) {
       console.error('Erreur lors du chargement des paramètres:', error);
     } finally {

@@ -26,6 +26,10 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: 'vfreud@yahoo.com', // Admin user email
+      password: '!Phone200344' // Admin user password
+    }
   });
 
   const onSubmit = async (data: LoginFormData) => {
@@ -33,7 +37,13 @@ export default function LoginPage() {
     try {
       await signIn(data.email, data.password);
       toast.success('Connexion réussie !');
-      navigate('/');
+      
+      // Redirect to admin dashboard if it's the admin user
+      if (data.email === 'vfreud@yahoo.com') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } catch (error: any) {
       toast.error(error.message || 'Erreur lors de la connexion');
     } finally {

@@ -42,9 +42,9 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 // Test connection function to verify Supabase is working
 export const testSupabaseConnection = async () => {
   try {
-    // Reduce timeout to 3 seconds to prevent long blocking
+    // Increased timeout from 3000ms to 5000ms (5 seconds)
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Timeout de connexion à Supabase')), 3000)
+      setTimeout(() => reject(new Error('Timeout de connexion à Supabase')), 5000)
     );
 
     const fetchPromise = supabase.from('company_settings').select('name').limit(1);

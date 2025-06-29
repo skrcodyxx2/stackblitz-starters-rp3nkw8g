@@ -29,6 +29,24 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       'X-Client-Info': 'dounie-cuisine-pro@1.0.0',
     },
   },
+  // Add request timeout
+  fetch: (url, options) => {
+    const controller = new AbortController();
+    const { signal } = controller;
+    
+    // Set timeout to 15 seconds
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    
+    return fetch(url, { ...options, signal })
+      .then(response => {
+        clearTimeout(timeoutId);
+        return response;
+      })
+      .catch(error => {
+        clearTimeout(timeoutId);
+        throw error;
+      });
+  }
 });
 
 // Test connection function to verify Supabase is working
@@ -70,14 +88,15 @@ export const isDevelopment = () => {
   return import.meta.env.MODE === 'development';
 };
 
-// Helper function to log connection status
-export const logConnectionStatus = async () => {
-  if (isDevelopment()) {
-    const result = await testSupabaseConnection();
+// Initialize connection test on app start
+if (isDevelopment()) {
+  console.log('Testing Supabase connection...');
+  testSupabaseConnection().then(result => {
     if (result.success) {
       console.log('✅ Supabase connection successful');
     } else {
       console.warn('⚠️ Supabase connection failed:', result.error);
+      console.log('Using the following Supabase URL:', supabaseUrl);
     }
-  }
-};
+  });
+}

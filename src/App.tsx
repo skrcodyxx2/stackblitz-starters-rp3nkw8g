@@ -5,7 +5,7 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import AdminLayout from './components/admin/AdminLayout';
 import ClientLayout from './components/client/ClientLayout';
 import { Toaster } from 'react-hot-toast';
-import { testSupabaseConnection } from './lib/supabase';
+import { testConnection } from './lib/database.js';
 
 // Public pages
 import HomePage from './pages/public/HomePage';
@@ -37,9 +37,9 @@ function AppContent() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Test Supabase connection on app start
+  // Test database connection on app start
   useEffect(() => {
-    testSupabaseConnection();
+    testConnection();
   }, []);
 
   // Redirect to appropriate dashboard if accessing root admin or client routes

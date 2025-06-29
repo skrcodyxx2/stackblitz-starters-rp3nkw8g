@@ -3,7 +3,7 @@
  * Ce module fournit des fonctions pour interagir avec l'API PostgreSQL
  */
 
-import { query } from './postgres.js';
+import { query } from './database.js';
 import toast from 'react-hot-toast';
 
 // Fonction générique pour gérer les erreurs

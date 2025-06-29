@@ -5,7 +5,7 @@
 
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { query } from './postgres.js';
+import { query } from './database.js';
 import toast from 'react-hot-toast';
 
 // Configuration
@@ -154,7 +154,7 @@ export const signIn = async (email, password) => {
 
     return {
       data: {
-        user: { ...user, role: profile.role },
+        user: { id: user.id, email: user.email, role: profile.role },
         profile,
         token
       },
@@ -203,7 +203,7 @@ export const getCurrentUser = async (token) => {
     }
 
     // Récupérer l'utilisateur
-    const userResult = await query('SELECT * FROM users WHERE id = $1', [decoded.id]);
+    const userResult = await query('SELECT id, email, created_at FROM users WHERE id = $1', [decoded.id]);
     
     if (userResult.error) {
       throw userResult.error;
@@ -235,7 +235,7 @@ export const getCurrentUser = async (token) => {
 
     return {
       data: {
-        user: { ...user, role: profile.role },
+        user: { id: user.id, email: user.email, role: profile.role },
         profile
       },
       error: null
@@ -276,84 +276,12 @@ export const updateProfile = async (userId, updates, token) => {
   }
 };
 
-// Fonction pour réinitialiser le mot de passe
-export const resetPassword = async (email) => {
-  try {
-    // Vérifier si l'utilisateur existe
-    const userResult = await query('SELECT * FROM users WHERE email = $1', [email]);
-    
-    if (userResult.error) {
-      throw userResult.error;
-    }
-
-    if (!userResult.data || userResult.data.length === 0) {
-      // Ne pas indiquer que l'email n'existe pas pour des raisons de sécurité
-      return { data: true, error: null };
-    }
-
-    const user = userResult.data[0];
-
-    // Générer un token de réinitialisation
-    const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    const resetTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 heures
-
-    // Mettre à jour l'utilisateur avec le token
-    await query(
-      'UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE id = $3',
-      [resetToken, resetTokenExpires, user.id]
-    );
-
-    // Envoyer un email (simulé ici)
-    console.log(`Réinitialisation de mot de passe pour ${email}. Token: ${resetToken}`);
-
-    return { data: true, error: null };
-  } catch (error) {
-    console.error('Erreur de réinitialisation de mot de passe:', error);
-    return { data: null, error: { message: error.message || 'Erreur lors de la réinitialisation du mot de passe' } };
-  }
-};
-
-// Middleware pour vérifier l'authentification
-export const requireAuth = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  
-  if (!token) {
-    return res.status(401).json({ message: 'Authentification requise' });
-  }
-  
-  const decoded = verifyToken(token);
-  if (!decoded) {
-    return res.status(401).json({ message: 'Token invalide ou expiré' });
-  }
-  
-  req.user = decoded;
-  next();
-};
-
-// Middleware pour vérifier le rôle
-export const requireRole = (role) => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Authentification requise' });
-    }
-    
-    if (req.user.role !== role && !(req.user.role === 'admin' && role === 'employee')) {
-      return res.status(403).json({ message: 'Accès non autorisé' });
-    }
-    
-    next();
-  };
-};
-
 export default {
   signUp,
   signIn,
   signOut,
   getCurrentUser,
   updateProfile,
-  resetPassword,
   generateToken,
-  verifyToken,
-  requireAuth,
-  requireRole
+  verifyToken
 };

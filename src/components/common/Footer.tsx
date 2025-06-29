@@ -18,8 +18,22 @@ interface CompanySettings {
   };
 }
 
+const defaultSettings: CompanySettings = {
+  name: 'Dounie Cuisine Pro',
+  slogan: 'Service Traiteur Premium',
+  description: 'Service traiteur haut de gamme spécialisé dans la cuisine haïtienne et caribéenne. Nous créons des expériences culinaires mémorables pour tous vos événements.',
+  address: 'Montréal, Québec, Canada',
+  phone: '+1 (514) 123-4567',
+  email: 'info@dounieculisine.ca',
+  social_media: {
+    facebook: 'https://facebook.com/dounieculisine',
+    instagram: 'https://instagram.com/dounieculisine',
+    twitter: 'https://twitter.com/dounieculisine'
+  }
+};
+
 export default function Footer() {
-  const [settings, setSettings] = useState<CompanySettings | null>(null);
+  const [settings, setSettings] = useState<CompanySettings>(defaultSettings);
 
   useEffect(() => {
     fetchCompanySettings();
@@ -33,16 +47,25 @@ export default function Footer() {
         .limit(1);
 
       if (error) {
-        throw error;
+        console.error('Erreur Supabase:', error);
+        return; // Use default settings
       }
 
       if (data && data.length > 0) {
-        setSettings(data[0]);
-      } else {
-        console.log('No company settings found, using defaults');
+        const dbSettings = data[0];
+        setSettings({
+          name: dbSettings.name || defaultSettings.name,
+          slogan: dbSettings.slogan || defaultSettings.slogan,
+          description: dbSettings.description || defaultSettings.description,
+          address: dbSettings.address || defaultSettings.address,
+          phone: dbSettings.phone || defaultSettings.phone,
+          email: dbSettings.email || defaultSettings.email,
+          social_media: dbSettings.social_media || defaultSettings.social_media
+        });
       }
     } catch (error) {
       console.error('Erreur lors du chargement des paramètres:', error);
+      // Keep default settings on error
     }
   };
 
@@ -58,18 +81,18 @@ export default function Footer() {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-white">
-                  {settings?.name || 'Dounie Cuisine'}
+                  {settings.name}
                 </h3>
                 <p className="text-sm text-gray-400">
-                  {settings?.slogan || 'Service Traiteur Premium'}
+                  {settings.slogan}
                 </p>
               </div>
             </div>
             <p className="text-gray-400 text-sm mb-4">
-              {settings?.description || 'Service traiteur haut de gamme spécialisé dans la cuisine haïtienne et caribéenne. Nous créons des expériences culinaires mémorables pour tous vos événements.'}
+              {settings.description}
             </p>
             <div className="flex space-x-4">
-              {settings?.social_media?.facebook && (
+              {settings.social_media?.facebook && (
                 <a 
                   href={settings.social_media.facebook} 
                   target="_blank" 
@@ -79,7 +102,7 @@ export default function Footer() {
                   <Facebook className="w-5 h-5" />
                 </a>
               )}
-              {settings?.social_media?.instagram && (
+              {settings.social_media?.instagram && (
                 <a 
                   href={settings.social_media.instagram} 
                   target="_blank" 
@@ -89,7 +112,7 @@ export default function Footer() {
                   <Instagram className="w-5 h-5" />
                 </a>
               )}
-              {settings?.social_media?.twitter && (
+              {settings.social_media?.twitter && (
                 <a 
                   href={settings.social_media.twitter} 
                   target="_blank" 
@@ -163,19 +186,19 @@ export default function Footer() {
               <div className="flex items-center space-x-3">
                 <MapPin className="w-5 h-5 text-primary-400 flex-shrink-0" />
                 <span className="text-gray-400 text-sm">
-                  {settings?.address || 'Montréal, Québec, Canada'}
+                  {settings.address}
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <Phone className="w-5 h-5 text-primary-400 flex-shrink-0" />
                 <span className="text-gray-400 text-sm">
-                  {settings?.phone || '+1 (514) 123-4567'}
+                  {settings.phone}
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <Mail className="w-5 h-5 text-primary-400 flex-shrink-0" />
                 <span className="text-gray-400 text-sm">
-                  {settings?.email || 'info@dounieculisine.ca'}
+                  {settings.email}
                 </span>
               </div>
             </div>

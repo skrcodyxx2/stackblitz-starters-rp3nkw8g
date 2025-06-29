@@ -1,13 +1,46 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, Upload, Globe, Mail, Phone, MapPin } from 'lucide-react';
+import { Settings, Save, Globe, Mail, Phone, MapPin } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 import type { Database } from '../../types/database';
 
 type CompanySettings = Database['public']['Tables']['company_settings']['Row'];
 
+const defaultSettings: Partial<CompanySettings> = {
+  name: 'Dounie Cuisine Pro',
+  slogan: 'Saveurs Authentiques Caribéennes',
+  description: 'Service traiteur haut de gamme spécialisé dans la cuisine haïtienne et caribéenne.',
+  address: 'Montréal, Québec, Canada',
+  phone: '+1 (514) 123-4567',
+  email: 'info@dounieculisine.ca',
+  website: 'https://dounieculisine.ca',
+  hero_title: 'Saveurs Authentiques Caribéennes',
+  hero_subtitle: 'Service traiteur haut de gamme spécialisé dans la cuisine haïtienne et caribéenne. Nous créons des expériences culinaires mémorables pour tous vos événements.',
+  hero_image_url: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1920&h=1080&fit=crop',
+  tax_tps: 0.05,
+  tax_tvq: 0.09975,
+  business_hours: {
+    monday: { open: "09:00", close: "18:00", closed: false },
+    tuesday: { open: "09:00", close: "18:00", closed: false },
+    wednesday: { open: "09:00", close: "18:00", closed: false },
+    thursday: { open: "09:00", close: "18:00", closed: false },
+    friday: { open: "09:00", close: "18:00", closed: false },
+    saturday: { open: "10:00", close: "16:00", closed: false },
+    sunday: { open: "10:00", close: "16:00", closed: true }
+  },
+  social_media: {
+    facebook: "",
+    instagram: "",
+    twitter: "",
+    linkedin: ""
+  },
+  privacy_policy: 'Notre politique de confidentialité sera mise à jour prochainement.',
+  terms_of_service: 'Nos conditions d\'utilisation seront mises à jour prochainement.',
+  about_us: 'Dounie Cuisine Pro est une entreprise familiale spécialisée dans la cuisine haïtienne et caribéenne. Nous offrons des services de traiteur haut de gamme pour tous vos événements spéciaux.'
+};
+
 export default function AdminSettings() {
-  const [settings, setSettings] = useState<Partial<CompanySettings>>({});
+  const [settings, setSettings] = useState<Partial<CompanySettings>>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState('general');
@@ -21,18 +54,27 @@ export default function AdminSettings() {
       const { data, error } = await supabase
         .from('company_settings')
         .select('*')
-        .single();
+        .limit(1);
 
-      if (error && error.code !== 'PGRST116') {
-        throw error;
+      if (error) {
+        console.error('Erreur Supabase:', error);
+        setLoading(false);
+        return; // Use default settings
       }
 
-      if (data) {
-        setSettings(data);
+      if (data && data.length > 0) {
+        const dbSettings = data[0];
+        setSettings({
+          ...defaultSettings,
+          ...dbSettings,
+          // Ensure nested objects are properly merged
+          business_hours: { ...defaultSettings.business_hours, ...dbSettings.business_hours },
+          social_media: { ...defaultSettings.social_media, ...dbSettings.social_media }
+        });
       }
     } catch (error) {
       console.error('Erreur lors du chargement des paramètres:', error);
-      toast.error('Erreur lors du chargement des paramètres');
+      // Keep default settings on error
     } finally {
       setLoading(false);
     }
@@ -41,14 +83,35 @@ export default function AdminSettings() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { data: existingData } = await supabase
         .from('company_settings')
-        .upsert({
-          ...settings,
-          updated_at: new Date().toISOString()
-        });
+        .select('id')
+        .limit(1);
 
-      if (error) throw error;
+      if (existingData && existingData.length > 0) {
+        // Update existing record
+        const { error } = await supabase
+          .from('company_settings')
+          .update({
+            ...settings,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingData[0].id);
+
+        if (error) throw error;
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('company_settings')
+          .insert({
+            ...settings,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (error) throw error;
+      }
+
       toast.success('Paramètres sauvegardés avec succès');
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error);

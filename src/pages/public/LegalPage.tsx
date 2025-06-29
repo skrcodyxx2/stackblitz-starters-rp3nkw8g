@@ -4,6 +4,17 @@ import { supabase } from '../../lib/supabase';
 import Header from '../../components/common/Header';
 import Footer from '../../components/common/Footer';
 
+const defaultContent = {
+  'politique-confidentialite': {
+    title: 'Politique de Confidentialité',
+    content: 'Notre politique de confidentialité sera mise à jour prochainement.'
+  },
+  'conditions-utilisation': {
+    title: 'Conditions d\'Utilisation',
+    content: 'Nos conditions d\'utilisation seront mises à jour prochainement.'
+  }
+};
+
 export default function LegalPage() {
   const { type } = useParams<{ type: string }>();
   const [content, setContent] = useState<string>('');
@@ -22,33 +33,39 @@ export default function LegalPage() {
         .limit(1);
 
       if (error) {
-        throw error;
+        console.error('Erreur Supabase:', error);
+        useDefaultContent();
+        return;
       }
 
       if (data && data.length > 0) {
         const settings = data[0];
         if (type === 'politique-confidentialite') {
           setTitle('Politique de Confidentialité');
-          setContent(settings.privacy_policy || 'Cette page sera mise à jour prochainement.');
+          setContent(settings.privacy_policy || defaultContent['politique-confidentialite'].content);
         } else if (type === 'conditions-utilisation') {
           setTitle('Conditions d\'Utilisation');
-          setContent(settings.terms_of_service || 'Cette page sera mise à jour prochainement.');
+          setContent(settings.terms_of_service || defaultContent['conditions-utilisation'].content);
         }
       } else {
-        console.log('No company settings found, using defaults');
-        if (type === 'politique-confidentialite') {
-          setTitle('Politique de Confidentialité');
-          setContent('Notre politique de confidentialité sera mise à jour prochainement.');
-        } else if (type === 'conditions-utilisation') {
-          setTitle('Conditions d\'Utilisation');
-          setContent('Nos conditions d\'utilisation seront mises à jour prochainement.');
-        }
+        useDefaultContent();
       }
     } catch (error) {
       console.error('Erreur lors du chargement:', error);
-      setContent('Erreur lors du chargement du contenu.');
+      useDefaultContent();
     } finally {
       setLoading(false);
+    }
+  };
+
+  const useDefaultContent = () => {
+    if (type && defaultContent[type as keyof typeof defaultContent]) {
+      const defaultData = defaultContent[type as keyof typeof defaultContent];
+      setTitle(defaultData.title);
+      setContent(defaultData.content);
+    } else {
+      setTitle('Page non trouvée');
+      setContent('Le contenu demandé n\'a pas été trouvé.');
     }
   };
 

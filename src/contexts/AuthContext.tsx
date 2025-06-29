@@ -63,37 +63,80 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, retryCount = 0) => {
+    const maxRetries = 3;
+    const timeoutDuration = 10000; // Reduced to 10 seconds
+    
     try {
-      // Add timeout to prevent hanging requests - increased to 20 seconds
-      const timeoutPromise = new Promise<{data: null, error: Error}>((_, reject) =>
-        setTimeout(() => reject(new Error('Request timeout')), 20000)
+      // Create timeout promise
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout')), timeoutDuration)
       );
+
+      // Create fetch promise with AbortController for better timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutDuration);
 
       const fetchPromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
+        .abortSignal(controller.signal)
         .single();
       
-      const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
+      const result = await Promise.race([fetchPromise, timeoutPromise]);
+      
+      // Clear timeout if request completes
+      clearTimeout(timeoutId);
       
       if (result.error) {
         console.error('Error fetching profile:', result.error);
+        
+        // Handle specific Supabase errors
+        if (result.error.code === 'PGRST116') {
+          // No rows returned - profile doesn't exist
+          console.warn('Profile not found for user:', userId);
+          setProfile(null);
+          return;
+        }
+        
         throw result.error;
       }
       
       setProfile(result.data);
       console.log("Profile loaded:", result.data);
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error(`Error fetching profile (attempt ${retryCount + 1}):`, error);
       
-      // Handle different error types
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        toast.error('Problème de connexion au serveur. Veuillez vérifier votre connexion internet.');
-      } else if (error instanceof Error && error.message === 'Request timeout') {
-        toast.error('La requête a pris trop de temps. Veuillez réessayer plus tard.');
+      // Retry logic for network errors and timeouts
+      if (retryCount < maxRetries && 
+          (error instanceof Error && 
+           (error.message === 'Request timeout' || 
+            error.message.includes('fetch') ||
+            error.name === 'AbortError'))) {
+        
+        console.log(`Retrying profile fetch in ${(retryCount + 1) * 2} seconds...`);
+        
+        setTimeout(() => {
+          fetchProfile(userId, retryCount + 1);
+        }, (retryCount + 1) * 2000); // Exponential backoff: 2s, 4s, 6s
+        
+        return;
       }
+      
+      // Handle different error types for final attempt
+      if (error instanceof Error) {
+        if (error.message === 'Request timeout' || error.name === 'AbortError') {
+          toast.error('La connexion prend trop de temps. Veuillez rafraîchir la page.');
+        } else if (error.message.includes('fetch') || error.message.includes('network')) {
+          toast.error('Problème de connexion réseau. Vérifiez votre connexion internet.');
+        } else {
+          toast.error('Erreur lors du chargement du profil. Veuillez réessayer.');
+        }
+      }
+      
+      // Set profile to null on final failure to prevent infinite loading
+      setProfile(null);
     } finally {
       setLoading(false);
     }

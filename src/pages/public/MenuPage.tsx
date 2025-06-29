@@ -8,14 +8,12 @@ import type { Database } from '../../types/database';
 
 type MenuCategory = Database['public']['Tables']['menu_categories']['Row'];
 type MenuItem = Database['public']['Tables']['menu_items']['Row'];
-type SpecialMenu = Database['public']['Tables']['special_menus']['Row'];
 
 export default function MenuPage() {
   const { categories, menuItems, loading, error, refetch } = useMenuData();
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>(menuItems);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTab, setActiveTab] = useState<'items' | 'specials'>('items');
 
   useEffect(() => {
     let filtered = menuItems;
@@ -78,244 +76,171 @@ export default function MenuPage() {
       {/* Menu Section */}
       <section className="section-padding bg-white">
         <div className="container-custom">
-          {/* Tabs */}
-          <div className="flex justify-center mb-8">
-            <div className="bg-gray-100 p-1 rounded-lg">
+          {/* Search and Filter */}
+          <div className="mb-12">
+            <div className="flex flex-col md:flex-row gap-4 mb-8">
+              {/* Search */}
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Rechercher un plat..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="input-field pl-10"
+                />
+              </div>
+
+              {/* Category Filter */}
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Filter className="h-5 w-5 text-gray-400" />
+                </div>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="input-field pl-10 pr-8"
+                >
+                  <option value="all">Toutes les catégories</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Category Tabs */}
+            <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => setActiveTab('items')}
-                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                  activeTab === 'items'
-                    ? 'bg-white text-primary-600 shadow-md'
-                    : 'text-gray-600 hover:text-gray-800'
+                onClick={() => setSelectedCategory('all')}
+                className={`px-6 py-3 rounded-full font-medium transition-all duration-200 ${
+                  selectedCategory === 'all'
+                    ? 'bg-primary-600 text-white shadow-lg'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                Plats Individuels
+                Tous
               </button>
-              <button
-                onClick={() => setActiveTab('specials')}
-                className={`px-6 py-3 rounded-lg font-medium transition-all duration-200 ${
-                  activeTab === 'specials'
-                    ? 'bg-white text-primary-600 shadow-md'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                Menus Spéciaux
-              </button>
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`px-6 py-3 rounded-full font-medium transition-all duration-200 ${
+                    selectedCategory === category.id
+                      ? 'bg-primary-600 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
             </div>
           </div>
 
-          {activeTab === 'items' ? (
-            <>
-              {/* Search and Filter */}
-              <div className="mb-12">
-                <div className="flex flex-col md:flex-row gap-4 mb-8">
-                  {/* Search */}
-                  <div className="relative flex-1">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Rechercher un plat..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="input-field pl-10"
-                    />
-                  </div>
-
-                  {/* Category Filter */}
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Filter className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <select
-                      value={selectedCategory}
-                      onChange={(e) => setSelectedCategory(e.target.value)}
-                      className="input-field pl-10 pr-8"
-                    >
-                      <option value="all">Toutes les catégories</option>
-                      {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Category Tabs */}
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => setSelectedCategory('all')}
-                    className={`px-6 py-3 rounded-full font-medium transition-all duration-200 ${
-                      selectedCategory === 'all'
-                        ? 'bg-primary-600 text-white shadow-lg'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    Tous
-                  </button>
-                  {categories.map((category) => (
-                    <button
-                      key={category.id}
-                      onClick={() => setSelectedCategory(category.id)}
-                      className={`px-6 py-3 rounded-full font-medium transition-all duration-200 ${
-                        selectedCategory === category.id
-                          ? 'bg-primary-600 text-white shadow-lg'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {category.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Menu Items Grid */}
-              {filteredItems.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-xl text-gray-600">
-                    Aucun plat trouvé pour votre recherche.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {filteredItems.map((item) => (
-                    <div
-                      key={item.id}
-                      className="card hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
-                    >
-                      {/* Image */}
-                      <div className="aspect-w-16 aspect-h-9 relative overflow-hidden">
-                        <img
-                          src={item.image_url || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'}
-                          alt={item.name}
-                          className="w-full h-48 object-cover"
-                        />
-                        {item.is_festive && (
-                          <div className="absolute top-4 right-4 bg-secondary-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                            Festif
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Content */}
-                      <div className="p-6">
-                        <div className="flex justify-between items-start mb-3">
-                          <h3 className="text-xl font-bold text-gray-900">{item.name}</h3>
-                          {item.price && (
-                            <span className="text-2xl font-bold text-primary-600">
-                              {formatPrice(item.price)}
-                            </span>
-                          )}
-                        </div>
-
-                        <p className="text-gray-600 mb-4 line-clamp-3">
-                          {item.description}
-                        </p>
-
-                        {/* Meta Info */}
-                        <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
-                          {item.preparation_time && (
-                            <div className="flex items-center">
-                              <Clock className="w-4 h-4 mr-1" />
-                              <span>{item.preparation_time} min</span>
-                            </div>
-                          )}
-                          {item.calories && (
-                            <div className="flex items-center">
-                              <span>{item.calories} cal</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Ingredients */}
-                        {item.ingredients && item.ingredients.length > 0 && (
-                          <div className="mb-4">
-                            <p className="text-sm font-medium text-gray-700 mb-2">Ingrédients:</p>
-                            <div className="flex flex-wrap gap-1">
-                              {item.ingredients.slice(0, 3).map((ingredient, index) => (
-                                <span
-                                  key={index}
-                                  className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
-                                >
-                                  {ingredient}
-                                </span>
-                              ))}
-                              {item.ingredients.length > 3 && (
-                                <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
-                                  +{item.ingredients.length - 3}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Allergens */}
-                        {item.allergens && item.allergens.length > 0 && (
-                          <div className="mb-4">
-                            <p className="text-sm font-medium text-gray-700 mb-2">Allergènes:</p>
-                            <div className="flex flex-wrap gap-1">
-                              {item.allergens.map((allergen, index) => (
-                                <span
-                                  key={index}
-                                  className="px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full"
-                                >
-                                  {allergen}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Action Button */}
-                        <button className="w-full btn-primary">
-                          Ajouter au Devis
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
+          {/* Menu Items Grid */}
+          {filteredItems.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-xl text-gray-600">
+                Aucun plat trouvé pour votre recherche.
+              </p>
+            </div>
           ) : (
-            /* Special Menus */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {specialMenus.map((menu) => (
+              {filteredItems.map((item) => (
                 <div
-                  key={menu.id}
+                  key={item.id}
                   className="card hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
                 >
                   {/* Image */}
                   <div className="aspect-w-16 aspect-h-9 relative overflow-hidden">
                     <img
-                      src={menu.image_url}
-                      alt={menu.name}
+                      src={item.image_url || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'}
+                      alt={item.name}
                       className="w-full h-48 object-cover"
                     />
-                    <div className="absolute top-4 left-4 bg-accent-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                      {menu.event_type}
-                    </div>
+                    {item.is_festive && (
+                      <div className="absolute top-4 right-4 bg-secondary-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+                        Festif
+                      </div>
+                    )}
                   </div>
 
                   {/* Content */}
                   <div className="p-6">
                     <div className="flex justify-between items-start mb-3">
-                      <h3 className="text-xl font-bold text-gray-900">{menu.name}</h3>
-                      {menu.price && (
+                      <h3 className="text-xl font-bold text-gray-900">{item.name}</h3>
+                      {item.price && (
                         <span className="text-2xl font-bold text-primary-600">
-                          {formatPrice(menu.price)}
+                          {formatPrice(item.price)}
                         </span>
                       )}
                     </div>
 
-                    <p className="text-gray-600 mb-6">
-                      {menu.description}
+                    <p className="text-gray-600 mb-4 line-clamp-3">
+                      {item.description}
                     </p>
+
+                    {/* Meta Info */}
+                    <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
+                      {item.preparation_time && (
+                        <div className="flex items-center">
+                          <Clock className="w-4 h-4 mr-1" />
+                          <span>{item.preparation_time} min</span>
+                        </div>
+                      )}
+                      {item.calories && (
+                        <div className="flex items-center">
+                          <span>{item.calories} cal</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Ingredients */}
+                    {item.ingredients && item.ingredients.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Ingrédients:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {item.ingredients.slice(0, 3).map((ingredient, index) => (
+                            <span
+                              key={index}
+                              className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
+                            >
+                              {ingredient}
+                            </span>
+                          ))}
+                          {item.ingredients.length > 3 && (
+                            <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                              +{item.ingredients.length - 3}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Allergens */}
+                    {item.allergens && item.allergens.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Allergènes:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {item.allergens.map((allergen, index) => (
+                            <span
+                              key={index}
+                              className="px-2 py-1 bg-red-100 text-red-600 text-xs rounded-full"
+                            >
+                              {allergen}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Action Button */}
                     <button className="w-full btn-primary">
-                      Demander un Devis
+                      Ajouter au Devis
                     </button>
                   </div>
                 </div>

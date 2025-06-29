@@ -1,126 +1,112 @@
 /**
  * Configuration de base de données pour Dounie Cuisine Pro
- * Ce module gère la connexion à la base de données PostgreSQL locale
+ * Ce module gère la connexion à la base de données SQLite locale
  */
 
-import pg from 'pg';
+import Database from 'better-sqlite3';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import toast from 'react-hot-toast';
 
-// Configuration de la connexion
-const config = {
-  host: import.meta.env.VITE_PG_HOST || 'localhost',
-  port: parseInt(import.meta.env.VITE_PG_PORT || '5432'),
-  database: import.meta.env.VITE_PG_DATABASE || 'dounie_cuisine',
-  user: import.meta.env.VITE_PG_USER || 'dounie_user',
-  password: import.meta.env.VITE_PG_PASSWORD || 'dounie_password',
-  ssl: import.meta.env.VITE_PG_SSL === 'true' ? { rejectUnauthorized: false } : false,
-  max: 20, // Taille maximale du pool de connexions
-  idleTimeoutMillis: 30000, // Temps d'inactivité avant de fermer une connexion
-  connectionTimeoutMillis: 10000, // Temps d'attente pour une connexion
-};
+// Obtenir le chemin du fichier actuel
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Créer un pool de connexions
-const pool = new pg.Pool(config);
+// Chemin de la base de données
+const DB_PATH = path.join(__dirname, '..', '..', 'database.sqlite');
 
-// Événements du pool
-pool.on('connect', () => {
-  console.log('Nouvelle connexion PostgreSQL établie');
-});
+// Vérifier si la base de données existe
+if (!fs.existsSync(DB_PATH)) {
+  console.warn('Base de données non trouvée. Veuillez exécuter npm run db:setup et npm run db:seed');
+}
 
-pool.on('error', (err) => {
-  console.error('Erreur PostgreSQL inattendue:', err);
-  toast.error('Problème de connexion à la base de données');
-});
+// Créer une instance de la base de données
+let db;
+try {
+  db = new Database(DB_PATH, { fileMustExist: true });
+  db.pragma('foreign_keys = ON');
+  console.log('✅ Connexion à la base de données SQLite établie');
+} catch (error) {
+  console.error('❌ Erreur lors de la connexion à la base de données:', error.message);
+  toast.error('Erreur de base de données. Veuillez contacter l\'administrateur.');
+}
 
 // Fonction pour tester la connexion
-export const testConnection = async () => {
+export const testConnection = () => {
   try {
-    const client = await pool.connect();
-    const result = await client.query('SELECT NOW()');
-    client.release();
-    console.log('Connexion PostgreSQL réussie:', result.rows[0]);
-    return { success: true, data: result.rows[0] };
-  } catch (err) {
-    console.error('Erreur de connexion PostgreSQL:', err);
-    toast.error('Impossible de se connecter à la base de données');
-    return { success: false, error: err };
+    if (!db) {
+      console.error('❌ Base de données non initialisée');
+      return { success: false, error: 'Base de données non initialisée' };
+    }
+    
+    const result = db.prepare('SELECT 1 as test').get();
+    console.log('✅ Test de connexion à la base de données réussi:', result);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error('❌ Erreur lors du test de la base de données:', error.message);
+    return { success: false, error: error.message };
   }
 };
 
 // Fonction pour exécuter une requête
-export const query = async (text, params) => {
-  const start = Date.now();
+export const query = (sql, params = []) => {
   try {
-    const res = await pool.query(text, params);
-    const duration = Date.now() - start;
-    console.log('Requête exécutée', { text, duration, rows: res.rowCount });
-    return { data: res.rows, error: null };
-  } catch (err) {
-    const duration = Date.now() - start;
-    console.error('Erreur de requête', { text, duration, error: err });
-    return { data: null, error: err };
-  }
-};
-
-// Fonction pour obtenir un client du pool
-export const getClient = async () => {
-  const client = await pool.connect();
-  const query = client.query;
-  const release = client.release;
-  
-  // Remplacer la méthode release pour logger les requêtes longues
-  client.release = () => {
-    release.apply(client);
-    console.log('Client PostgreSQL libéré');
-  };
-  
-  // Remplacer la méthode query pour logger les requêtes
-  client.query = async (text, params) => {
-    const start = Date.now();
-    try {
-      const res = await query.apply(client, [text, params]);
-      const duration = Date.now() - start;
-      console.log('Requête exécutée', { text, duration, rows: res.rowCount });
-      return res;
-    } catch (err) {
-      const duration = Date.now() - start;
-      console.error('Erreur de requête', { text, duration, error: err });
-      throw err;
+    if (!db) {
+      throw new Error('Base de données non initialisée');
     }
-  };
-  
-  return client;
+    
+    const stmt = db.prepare(sql);
+    
+    if (sql.trim().toLowerCase().startsWith('select')) {
+      // Pour les requêtes SELECT
+      if (sql.toLowerCase().includes('limit 1')) {
+        // Pour les requêtes qui retournent un seul résultat
+        const result = stmt.get(...params);
+        return { data: result, error: null };
+      } else {
+        // Pour les requêtes qui retournent plusieurs résultats
+        const result = stmt.all(...params);
+        return { data: result, error: null };
+      }
+    } else {
+      // Pour les requêtes INSERT, UPDATE, DELETE
+      const result = stmt.run(...params);
+      return { data: result, error: null };
+    }
+  } catch (error) {
+    console.error('❌ Erreur de requête SQL:', error.message, 'SQL:', sql, 'Params:', params);
+    return { data: null, error };
+  }
 };
 
 // Fonction pour exécuter une transaction
-export const transaction = async (callback) => {
-  const client = await pool.connect();
+export const transaction = (callback) => {
   try {
-    await client.query('BEGIN');
-    const result = await callback(client);
-    await client.query('COMMIT');
+    if (!db) {
+      throw new Error('Base de données non initialisée');
+    }
+    
+    const result = db.transaction(callback)();
     return { data: result, error: null };
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error('Erreur de transaction:', err);
-    return { data: null, error: err };
-  } finally {
-    client.release();
+  } catch (error) {
+    console.error('❌ Erreur de transaction:', error.message);
+    return { data: null, error };
   }
 };
 
-// Fonction pour fermer le pool
-export const closePool = async () => {
-  await pool.end();
-  console.log('Pool PostgreSQL fermé');
+// Fonction pour fermer la connexion
+export const closeDatabase = () => {
+  if (db) {
+    db.close();
+    console.log('✅ Connexion à la base de données fermée');
+  }
 };
 
-// Exporter le pool pour un usage direct si nécessaire
+// Exporter les fonctions
 export default {
-  pool,
   query,
-  getClient,
   transaction,
   testConnection,
-  closePool
+  closeDatabase
 };

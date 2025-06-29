@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import bcrypt from 'bcryptjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { v4 as uuidv4 } from 'uuid';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,33 +13,54 @@ console.log('🌱 Initialisation des données de base...');
 
 const db = new Database(DB_PATH);
 
-// Fonction pour générer un UUID simple
+// Fonction pour générer un UUID
 function generateId() {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-    const r = Math.random() * 16 | 0;
-    const v = c == 'x' ? r : (r & 0x3 | 0x8);
-    return v.toString(16);
-  });
+  return uuidv4();
 }
 
 try {
   // Créer l'utilisateur admin par défaut
   const adminId = generateId();
-  const adminPassword = await bcrypt.hash('admin123', 10);
+  const adminPassword = await bcrypt.hash('Admin123!', 10);
   
   const insertAdmin = db.prepare(`
     INSERT OR IGNORE INTO users (id, email, password_hash, first_name, last_name, role, is_active)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `);
   
-  insertAdmin.run(adminId, 'admin@dounieculisine.ca', adminPassword, 'Admin', 'Dounie', 'admin', 1);
-  console.log('✅ Utilisateur admin créé (email: admin@dounieculisine.ca, mot de passe: admin123)');
+  insertAdmin.run(adminId, 'admin@dounieculisine.ca', adminPassword, 'Admin', 'Système', 'admin', 1);
+  console.log('✅ Utilisateur admin créé (email: admin@dounieculisine.ca, mot de passe: Admin123!)');
+
+  // Créer un utilisateur employé
+  const employeeId = generateId();
+  const employeePassword = await bcrypt.hash('Employe123!', 10);
+  
+  const insertEmployee = db.prepare(`
+    INSERT OR IGNORE INTO users (id, email, password_hash, first_name, last_name, role, is_active)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+  
+  insertEmployee.run(employeeId, 'employe@dounieculisine.ca', employeePassword, 'Employé', 'Test', 'employee', 1);
+  console.log('✅ Utilisateur employé créé (email: employe@dounieculisine.ca, mot de passe: Employe123!)');
+
+  // Créer un utilisateur client
+  const clientId = generateId();
+  const clientPassword = await bcrypt.hash('Client123!', 10);
+  
+  const insertClient = db.prepare(`
+    INSERT OR IGNORE INTO users (id, email, password_hash, first_name, last_name, role, is_active)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+  
+  insertClient.run(clientId, 'client@example.com', clientPassword, 'Client', 'Test', 'client', 1);
+  console.log('✅ Utilisateur client créé (email: client@example.com, mot de passe: Client123!)');
 
   // Insérer les paramètres de l'entreprise
+  const companyId = generateId();
   const insertCompanySettings = db.prepare(`
     INSERT OR IGNORE INTO company_settings (id) VALUES (?)
   `);
-  insertCompanySettings.run(generateId());
+  insertCompanySettings.run(companyId);
   console.log('✅ Paramètres de l\'entreprise initialisés');
 
   // Insérer les catégories de menu
@@ -185,9 +207,10 @@ try {
   console.log('✅ Images de galerie créées');
 
   console.log('\n🎉 Initialisation des données terminée!');
-  console.log('👤 Utilisateur admin créé:');
-  console.log('   Email: admin@dounieculisine.ca');
-  console.log('   Mot de passe: admin123');
+  console.log('👤 Utilisateurs créés:');
+  console.log('   Admin: admin@dounieculisine.ca / Admin123!');
+  console.log('   Employé: employe@dounieculisine.ca / Employe123!');
+  console.log('   Client: client@example.com / Client123!');
 
 } catch (error) {
   console.error('❌ Erreur lors de l\'initialisation des données:', error);

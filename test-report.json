@@ -1,0 +1,397 @@
+{
+  "timestamp": "2025-06-29T06:56:27.632Z",
+  "duration": 0.018,
+  "summary": {
+    "total": 77,
+    "passed": 77,
+    "failed": 0,
+    "successRate": 100
+  },
+  "details": [
+    {
+      "name": "Fichier requis: src/App.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Fichier requis: src/main.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Fichier requis: src/index.css",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Fichier requis: package.json",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Fichier requis: vite.config.ts",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Fichier requis: tailwind.config.js",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Fichier requis: tsconfig.json",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Répertoire requis: src/components",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Répertoire requis: src/pages",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Répertoire requis: src/contexts",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Répertoire requis: src/hooks",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Répertoire requis: src/utils",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Répertoire requis: src/types",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Répertoire requis: src/lib",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Répertoire requis: docs",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Structure composants: src/components/admin",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Structure composants: src/components/auth",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Structure composants: src/components/client",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Structure composants: src/components/common",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Structure pages: src/pages/public",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Structure pages: src/pages/admin",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Structure pages: src/pages/auth",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Structure pages: src/pages/client",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Package.json valide",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Configuration TypeScript",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Configuration Tailwind",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Configuration Vite",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Composant: Header.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Composant: Footer.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Composant: AdminLayout.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Composant: ClientLayout.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Composant: ProtectedRoute.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "AdminLayout - Navigation",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "ClientLayout - Navigation",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: HomePage.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: MenuPage.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: ServicesPage.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: GalleryPage.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: ContactPage.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: ReservationPage.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: LoginPage.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: RegisterPage.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: AdminDashboard.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: AdminUsers.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: AdminMenu.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: AdminOrders.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: AdminReservations.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: AdminSettings.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: ClientDashboard.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: ClientProfile.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: ClientOrders.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Page: ClientReservations.tsx",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "HomePage - Sections requises",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "MenuPage - Fonctionnalités",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "ReservationPage - Étapes",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Hook useMenuData",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "AuthContext",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Utilitaires de formatage",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Constantes métier",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Types TypeScript",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Configuration Supabase",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Variables d'environnement",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Migrations SQL",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Protection des routes",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Validation des formulaires",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Gestion des erreurs",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Lazy loading des pages",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Optimisation des images",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Bundle size check",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Documentation: README.md",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Documentation: USER_GUIDE.md",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Documentation: API_REFERENCE.md",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Documentation: TROUBLESHOOTING.md",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Documentation: DEPLOYMENT.md",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Documentation: CHANGELOG.md",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "README principal",
+      "status": "PASSED",
+      "error": null
+    },
+    {
+      "name": "Qualité de la documentation",
+      "status": "PASSED",
+      "error": null
+    }
+  ]
+}

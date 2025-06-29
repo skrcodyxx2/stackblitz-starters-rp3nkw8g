@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = async (userId: string, retryCount = 0) => {
     const maxRetries = 3;
-    const timeoutDuration = 5000; // 5 seconds timeout
+    const timeoutDuration = 10000; // Increased from 5000ms to 10000ms (10 seconds)
     
     try {
       // Create timeout promise

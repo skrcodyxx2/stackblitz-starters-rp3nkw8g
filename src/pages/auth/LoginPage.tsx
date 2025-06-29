@@ -26,6 +26,10 @@ export default function LoginPage() {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: ''
+    }
   });
 
   const onSubmit = async (data: LoginFormData) => {
@@ -41,6 +45,7 @@ export default function LoginPage() {
         navigate('/');
       }
     } catch (error: any) {
+      console.error("Sign in error:", error);
       toast.error(error.message || 'Erreur lors de la connexion');
     } finally {
       setIsLoading(false);

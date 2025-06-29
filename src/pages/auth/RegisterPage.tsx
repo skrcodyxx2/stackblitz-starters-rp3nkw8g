@@ -12,7 +12,10 @@ const registerSchema = z.object({
   lastName: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
   email: z.string().email('Adresse email invalide'),
   phone: z.string().optional(),
-  password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères'),
+  password: z.string().min(8, 'Le mot de passe doit contenir au moins 8 caractères')
+    .regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une lettre majuscule')
+    .regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre')
+    .regex(/[^A-Za-z0-9]/, 'Le mot de passe doit contenir au moins un caractère spécial'),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
@@ -47,6 +50,7 @@ export default function RegisterPage() {
       toast.success('Compte créé avec succès !');
       navigate('/');
     } catch (error: any) {
+      console.error("Sign up error:", error);
       toast.error(error.message || 'Erreur lors de la création du compte');
     } finally {
       setIsLoading(false);
@@ -188,6 +192,9 @@ export default function RegisterPage() {
               {errors.password && (
                 <p className="mt-2 text-sm text-red-600">{errors.password.message}</p>
               )}
+              <p className="mt-2 text-xs text-gray-500">
+                Le mot de passe doit contenir au moins 8 caractères, une majuscule, un chiffre et un caractère spécial.
+              </p>
             </div>
 
             <div>
@@ -232,11 +239,11 @@ export default function RegisterPage() {
               />
               <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
                 J'accepte les{' '}
-                <Link to="/conditions-utilisation" className="text-primary-600 hover:text-primary-500">
+                <Link to="/legal/conditions-utilisation" className="text-primary-600 hover:text-primary-500">
                   conditions d'utilisation
                 </Link>{' '}
                 et la{' '}
-                <Link to="/politique-confidentialite" className="text-primary-600 hover:text-primary-500">
+                <Link to="/legal/politique-confidentialite" className="text-primary-600 hover:text-primary-500">
                   politique de confidentialité
                 </Link>
               </label>

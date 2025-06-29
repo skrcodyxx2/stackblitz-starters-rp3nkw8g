@@ -112,11 +112,11 @@ export default function GalleryPage() {
         ></div>
         <div className="relative container-custom section-padding">
           <div className="max-w-3xl">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 text-white text-shadow-lg">
               Notre
               <span className="block text-secondary-400">Galerie</span>
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-gray-100">
+            <p className="text-xl md:text-2xl mb-8 text-gray-100 text-shadow-md">
               Découvrez nos créations culinaires et les moments mémorables que nous avons 
               contribué à créer pour nos clients à travers nos albums d'événements.
             </p>
@@ -150,12 +150,12 @@ export default function GalleryPage() {
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300"></div>
                   <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                    <h3 className="text-xl font-bold mb-2">{album.name}</h3>
-                    <p className="text-sm text-gray-200 mb-2">{album.description}</p>
+                    <h3 className="text-xl font-bold mb-2 text-shadow-md">{album.name}</h3>
+                    <p className="text-sm text-gray-200 mb-2 text-shadow-sm">{album.description}</p>
                     {album.event_date && (
-                      <p className="text-xs text-gray-300">{formatDate(album.event_date)}</p>
+                      <p className="text-xs text-gray-300 text-shadow-sm">{formatDate(album.event_date)}</p>
                     )}
-                    <p className="text-xs text-gray-300">{album.gallery_images?.length || 0} photos</p>
+                    <p className="text-xs text-gray-300 text-shadow-sm">{album.gallery_images?.length || 0} photos</p>
                   </div>
                 </div>
               ))}
@@ -170,15 +170,15 @@ export default function GalleryPage() {
           {/* Header */}
           <div className="flex items-center justify-between p-6 text-white">
             <div>
-              <h2 className="text-2xl font-bold">{selectedAlbum.name}</h2>
-              <p className="text-gray-300">{selectedAlbum.description}</p>
+              <h2 className="text-2xl font-bold text-shadow-md">{selectedAlbum.name}</h2>
+              <p className="text-gray-300 text-shadow-sm">{selectedAlbum.description}</p>
               {selectedAlbum.event_date && (
-                <p className="text-sm text-gray-400">{formatDate(selectedAlbum.event_date)}</p>
+                <p className="text-sm text-gray-400 text-shadow-sm">{formatDate(selectedAlbum.event_date)}</p>
               )}
             </div>
             <button
               onClick={closeAlbum}
-              className="text-white hover:text-gray-300 p-2"
+              className="text-white hover:text-gray-300 p-2 bg-black bg-opacity-50 rounded-full"
             >
               <X className="w-8 h-8" />
             </button>
@@ -202,7 +202,7 @@ export default function GalleryPage() {
                     />
                     {image.caption && (
                       <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white p-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                        <p className="text-xs truncate">{image.caption}</p>
+                        <p className="text-xs truncate text-shadow-sm">{image.caption}</p>
                       </div>
                     )}
                   </div>
@@ -236,7 +236,7 @@ export default function GalleryPage() {
             <ChevronRight className="w-8 h-8" />
           </button>
           
-          <div className="max-w-4xl max-h-full">
+          <div className="max-w-4xl max-h-full flex flex-col items-center">
             <img
               src={selectedAlbum.gallery_images[selectedImageIndex].image_url}
               alt={selectedAlbum.gallery_images[selectedImageIndex].caption || ''}
@@ -244,8 +244,8 @@ export default function GalleryPage() {
             />
             
             {selectedAlbum.gallery_images[selectedImageIndex].caption && (
-              <div className="absolute bottom-4 left-4 right-4 text-white text-center bg-black bg-opacity-70 p-4 rounded-lg">
-                <p className="text-lg">{selectedAlbum.gallery_images[selectedImageIndex].caption}</p>
+              <div className="mt-4 text-white text-center bg-black bg-opacity-70 p-4 rounded-lg w-full">
+                <p className="text-lg text-shadow-sm">{selectedAlbum.gallery_images[selectedImageIndex].caption}</p>
                 <p className="text-sm text-gray-300 mt-2">
                   {selectedImageIndex + 1} / {selectedAlbum.gallery_images.length}
                 </p>

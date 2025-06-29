@@ -32,16 +32,19 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   },
   // Add reasonable timeouts to prevent hanging requests
   realtime: {
-    timeout: 10000, // 10 seconds
+    timeout: 5000, // 5 seconds
   },
+  db: {
+    schema: 'public'
+  }
 });
 
 // Test connection function to verify Supabase is working
 export const testSupabaseConnection = async () => {
   try {
-    // Reduce timeout to 5 seconds to prevent long blocking
+    // Reduce timeout to 3 seconds to prevent long blocking
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Timeout de connexion à Supabase')), 5000)
+      setTimeout(() => reject(new Error('Timeout de connexion à Supabase')), 3000)
     );
 
     const fetchPromise = supabase.from('company_settings').select('name').limit(1);
@@ -119,6 +122,12 @@ export const handleSupabaseError = (error: any, fallbackMessage = 'Une erreur es
       errorMessage = 'Vous n\'avez pas les permissions nécessaires pour cette action.';
     } else if (error.message.includes('not found')) {
       errorMessage = 'La ressource demandée n\'existe pas.';
+    } else if (error.message.includes('already exists')) {
+      errorMessage = 'Cette ressource existe déjà.';
+    } else if (error.message.includes('Invalid login credentials')) {
+      errorMessage = 'Email ou mot de passe incorrect.';
+    } else if (error.message.includes('Email not confirmed')) {
+      errorMessage = 'Veuillez confirmer votre email avant de vous connecter.';
     } else {
       // Use the actual error message if it's informative
       errorMessage = error.message;
@@ -132,4 +141,27 @@ export const handleSupabaseError = (error: any, fallbackMessage = 'Une erreur es
   });
   
   return errorMessage;
+};
+
+// Helper function to create a timeout promise
+export const createTimeout = (ms: number) => {
+  return new Promise<never>((_, reject) => 
+    setTimeout(() => reject(new Error('Request timeout')), ms)
+  );
+};
+
+// Helper function to safely fetch data with timeout
+export const safeFetch = async <T>(
+  fetchPromise: Promise<{ data: T | null; error: any }>,
+  timeoutMs = 5000,
+  fallbackData: T | null = null
+): Promise<{ data: T | null; error: any }> => {
+  try {
+    const timeoutPromise = createTimeout(timeoutMs);
+    const result = await Promise.race([fetchPromise, timeoutPromise]);
+    return result as { data: T | null; error: any };
+  } catch (error) {
+    console.error('Error in safeFetch:', error);
+    return { data: fallbackData, error };
+  }
 };

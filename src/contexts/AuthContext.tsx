@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
+import { supabase, handleSupabaseError } from '../lib/supabase';
 import type { Database } from '../types/database';
 import toast from 'react-hot-toast';
 
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = async (userId: string, retryCount = 0) => {
     const maxRetries = 3;
-    const timeoutDuration = 10000; // Reduced to 10 seconds
+    const timeoutDuration = 5000; // 5 seconds timeout
     
     try {
       // Create timeout promise
@@ -96,6 +96,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (result.error.code === 'PGRST116') {
           // No rows returned - profile doesn't exist
           console.warn('Profile not found for user:', userId);
+          
+          // Try to create profile if it doesn't exist
+          try {
+            const { data: userData } = await supabase.auth.getUser();
+            if (userData.user) {
+              const { error: insertError } = await supabase
+                .from('profiles')
+                .insert({
+                  id: userId,
+                  email: userData.user.email || '',
+                  role: 'client',
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                });
+                
+              if (insertError) {
+                console.error('Error creating profile:', insertError);
+              } else {
+                // Retry fetch after creating profile
+                return fetchProfile(userId, retryCount);
+              }
+            }
+          } catch (createError) {
+            console.error('Error creating missing profile:', createError);
+          }
+          
           setProfile(null);
           return;
         }
@@ -104,7 +130,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       setProfile(result.data);
-      console.log("Profile loaded:", result.data);
+      console.log("Profile loaded successfully");
     } catch (error) {
       console.error(`Error fetching profile (attempt ${retryCount + 1}):`, error);
       
@@ -115,11 +141,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             error.message.includes('fetch') ||
             error.name === 'AbortError'))) {
         
-        console.log(`Retrying profile fetch in ${(retryCount + 1) * 2} seconds...`);
+        console.log(`Retrying profile fetch in ${(retryCount + 1) * 1} seconds...`);
         
         setTimeout(() => {
           fetchProfile(userId, retryCount + 1);
-        }, (retryCount + 1) * 2000); // Exponential backoff: 2s, 4s, 6s
+        }, (retryCount + 1) * 1000); // Exponential backoff: 1s, 2s, 3s
         
         return;
       }
@@ -151,7 +177,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (error) throw error;
       
-      console.log("Sign in successful:", data);
+      console.log("Sign in successful");
       
       // Set user metadata for admin users to avoid RLS recursion issues
       if (email === 'vfreud@yahoo.com' && data.user) {
@@ -179,6 +205,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error("Sign in error:", error);
+      handleSupabaseError(error, 'Erreur de connexion');
       throw error;
     }
   };
@@ -201,28 +228,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (data.user) {
         // Profile should be created by the trigger, but we'll check and create if needed
-        const { data: existingProfile } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', data.user.id)
-          .single();
-          
-        if (!existingProfile) {
-          // Create profile manually if trigger failed
-          const { error: profileError } = await supabase
+        try {
+          const { data: existingProfile } = await supabase
             .from('profiles')
-            .insert({
-              id: data.user.id,
-              email,
-              role: 'client',
-              ...userData,
-            });
-          
-          if (profileError) throw profileError;
+            .select('id')
+            .eq('id', data.user.id)
+            .single();
+            
+          if (!existingProfile) {
+            // Create profile manually if trigger failed
+            const { error: profileError } = await supabase
+              .from('profiles')
+              .insert({
+                id: data.user.id,
+                email,
+                role: 'client',
+                ...userData,
+              });
+            
+            if (profileError) throw profileError;
+          }
+        } catch (profileError) {
+          console.warn("Profile check error (non-critical):", profileError);
+          // Continue even if profile check fails - the trigger should handle it
         }
       }
     } catch (error) {
       console.error("Sign up error:", error);
+      handleSupabaseError(error, 'Erreur lors de l\'inscription');
       throw error;
     }
   };
@@ -231,8 +264,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      // Clear local state
+      setUser(null);
+      setProfile(null);
+      setSession(null);
     } catch (error) {
       console.error("Sign out error:", error);
+      handleSupabaseError(error, 'Erreur lors de la déconnexion');
       throw error;
     }
   };
@@ -250,8 +289,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Refresh profile
       await fetchProfile(user.id);
+      
+      toast.success('Profil mis à jour avec succès');
     } catch (error) {
       console.error("Update profile error:", error);
+      handleSupabaseError(error, 'Erreur lors de la mise à jour du profil');
       throw error;
     }
   };

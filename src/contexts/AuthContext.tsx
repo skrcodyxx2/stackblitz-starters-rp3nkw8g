@@ -65,12 +65,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = async (userId: string, retryCount = 0) => {
     const maxRetries = 3;
-    const timeoutDuration = 20000; // Increased from 10000ms to 20000ms (20 seconds)
+    const timeoutDuration = 30000; // Increased from 20000ms to 30000ms (30 seconds)
     
     try {
+      console.log(`Fetching profile for user ${userId} (attempt ${retryCount + 1})`);
+      
       // Create timeout promise
       const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Request timeout')), timeoutDuration)
+        setTimeout(() => reject(new Error(`Request timeout (attempt ${retryCount + 1})`)), timeoutDuration)
       );
 
       // Create fetch promise with AbortController for better timeout handling
@@ -90,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(timeoutId);
       
       if (result.error) {
-        console.error('Error fetching profile:', result.error);
+        console.error(`Error fetching profile (attempt ${retryCount + 1}):`, result.error);
         
         // Handle specific Supabase errors
         if (result.error.code === 'PGRST116') {
@@ -101,6 +103,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           try {
             const { data: userData } = await supabase.auth.getUser();
             if (userData.user) {
+              console.log('Creating missing profile for user:', userId);
+              
               const { error: insertError } = await supabase
                 .from('profiles')
                 .insert({
@@ -114,6 +118,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               if (insertError) {
                 console.error('Error creating profile:', insertError);
               } else {
+                console.log('Profile created successfully, retrying fetch');
                 // Retry fetch after creating profile
                 return fetchProfile(userId, retryCount);
               }
@@ -123,41 +128,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
           
           setProfile(null);
+          setLoading(false);
           return;
         }
         
         throw result.error;
       }
       
+      console.log("Profile loaded successfully:", result.data.id);
       setProfile(result.data);
-      console.log("Profile loaded successfully");
     } catch (error) {
       console.error(`Error fetching profile (attempt ${retryCount + 1}):`, error);
       
       // Retry logic for network errors and timeouts
       if (retryCount < maxRetries && 
           (error instanceof Error && 
-           (error.message === 'Request timeout' || 
+           (error.message.includes('Request timeout') || 
             error.message.includes('fetch') ||
             error.name === 'AbortError'))) {
         
-        console.log(`Retrying profile fetch in ${(retryCount + 1) * 1} seconds...`);
+        const delayMs = (retryCount + 1) * 2000; // Exponential backoff: 2s, 4s, 6s
+        console.log(`Retrying profile fetch in ${delayMs/1000} seconds...`);
         
         setTimeout(() => {
           fetchProfile(userId, retryCount + 1);
-        }, (retryCount + 1) * 1000); // Exponential backoff: 1s, 2s, 3s
+        }, delayMs);
         
         return;
       }
       
       // Handle different error types for final attempt
       if (error instanceof Error) {
-        if (error.message === 'Request timeout' || error.name === 'AbortError') {
-          toast.error('La connexion prend trop de temps. Veuillez rafraîchir la page.');
+        if (error.message.includes('Request timeout') || error.name === 'AbortError') {
+          console.warn('Profile fetch timed out after multiple attempts. Continuing without profile data.');
+          toast.error('La connexion à la base de données prend trop de temps. Certaines fonctionnalités peuvent être limitées.', {
+            duration: 5000
+          });
         } else if (error.message.includes('fetch') || error.message.includes('network')) {
-          toast.error('Problème de connexion réseau. Vérifiez votre connexion internet.');
+          console.warn('Network error during profile fetch. Continuing without profile data.');
+          toast.error('Problème de connexion réseau. Certaines fonctionnalités peuvent être limitées.', {
+            duration: 5000
+          });
         } else {
-          toast.error('Erreur lors du chargement du profil. Veuillez réessayer.');
+          console.warn('Unknown error during profile fetch. Continuing without profile data.');
+          toast.error('Erreur lors du chargement du profil. Veuillez rafraîchir la page.', {
+            duration: 5000
+          });
         }
       }
       

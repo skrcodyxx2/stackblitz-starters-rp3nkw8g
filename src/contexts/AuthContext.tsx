@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import type { Database } from '../types/database';
+import toast from 'react-hot-toast';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -64,21 +65,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      // Add timeout to prevent hanging requests
+      const timeoutPromise = new Promise<{data: null, error: Error}>((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      );
+
+      const fetchPromise = supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
-
-      if (error) {
-        console.error('Error fetching profile:', error);
-        throw error;
+      
+      const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
+      
+      if (result.error) {
+        console.error('Error fetching profile:', result.error);
+        throw result.error;
       }
       
-      setProfile(data);
-      console.log("Profile loaded:", data);
+      setProfile(result.data);
+      console.log("Profile loaded:", result.data);
     } catch (error) {
       console.error('Error fetching profile:', error);
+      
+      // Handle different error types
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        toast.error('Problème de connexion au serveur. Veuillez vérifier votre connexion internet.');
+      } else if (error instanceof Error && error.message === 'Request timeout') {
+        toast.error('La requête a pris trop de temps. Veuillez réessayer plus tard.');
+      }
     } finally {
       setLoading(false);
     }

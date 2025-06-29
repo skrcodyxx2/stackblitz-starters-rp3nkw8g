@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, Mail, MapPin, Facebook, Instagram, Twitter } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -45,7 +45,7 @@ export default function Footer() {
       setIsLoading(true);
       
       // Add timeout to prevent hanging requests
-      const timeoutPromise = new Promise((_, reject) =>
+      const timeoutPromise = new Promise<{data: null, error: Error}>((_, reject) =>
         setTimeout(() => reject(new Error('Request timeout')), 10000)
       );
 
@@ -53,7 +53,7 @@ export default function Footer() {
         .from('company_settings')
         .select('name, slogan, description, address, phone, email, social_media')
         .limit(1);
-
+      
       const { data, error } = await Promise.race([fetchPromise, timeoutPromise]) as any;
 
       if (error) {

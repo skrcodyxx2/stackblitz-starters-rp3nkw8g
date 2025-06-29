@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -17,8 +17,21 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn, profile } = useAuth();
+  const { signIn, profile, user } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user && profile) {
+      if (profile.role === 'admin') {
+        navigate('/admin');
+      } else if (profile.role === 'employee') {
+        navigate('/admin');
+      } else {
+        navigate('/client');
+      }
+    }
+  }, [user, profile, navigate]);
 
   const {
     register,
@@ -38,22 +51,19 @@ export default function LoginPage() {
       await signIn(data.email, data.password);
       toast.success('Connexion réussie !');
       
-      // Wait a moment for the profile to be loaded
-      setTimeout(() => {
-        // Check if the user is an admin
-        if (data.email === 'vfreud@yahoo.com') {
-          navigate('/admin');
-        } else {
-          // Check profile role for other users
-          if (profile?.role === 'admin') {
-            navigate('/admin');
-          } else if (profile?.role === 'employee') {
+      // Redirect based on user role
+      if (data.email === 'vfreud@yahoo.com') {
+        navigate('/admin');
+      } else {
+        // Wait a moment for the profile to be loaded
+        setTimeout(() => {
+          if (profile?.role === 'admin' || profile?.role === 'employee') {
             navigate('/admin');
           } else {
             navigate('/client');
           }
-        }
-      }, 500);
+        }, 500);
+      }
     } catch (error: any) {
       console.error("Sign in error:", error);
       toast.error(error.message || 'Erreur lors de la connexion');

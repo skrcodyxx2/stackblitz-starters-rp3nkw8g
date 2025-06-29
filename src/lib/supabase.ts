@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../types/database';
+import toast from 'react-hot-toast';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -29,6 +30,10 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       'X-Client-Info': 'dounie-cuisine-pro@1.0.0',
     },
   },
+  // Add reasonable timeouts to prevent hanging requests
+  realtime: {
+    timeout: 10000, // 10 seconds
+  },
 });
 
 // Test connection function to verify Supabase is working
@@ -36,7 +41,7 @@ export const testSupabaseConnection = async () => {
   try {
     // Reduce timeout to 5 seconds to prevent long blocking
     const timeoutPromise = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Connection timeout')), 5000)
+      setTimeout(() => reject(new Error('Timeout de connexion à Supabase')), 5000)
     );
 
     const fetchPromise = supabase.from('company_settings').select('name').limit(1);
@@ -52,12 +57,12 @@ export const testSupabaseConnection = async () => {
     return { success: true, data: result.data };
   } catch (err) {
     if (err instanceof Error) {
-      if (err.message === 'Connection timeout') {
+      if (err.message === 'Timeout de connexion à Supabase') {
         console.warn('Timeout de connexion à Supabase - l\'application continuera de fonctionner');
-        return { success: false, error: { message: 'Connection timeout' } };
+        return { success: false, error: { message: 'Timeout de connexion à Supabase' } };
       } else if (err.message.includes('fetch')) {
         console.warn('Erreur réseau lors de la connexion à Supabase:', err);
-        return { success: false, error: { message: 'Network error' } };
+        return { success: false, error: { message: 'Erreur réseau' } };
       }
     }
     console.warn('Erreur lors de la connexion à Supabase:', err);
@@ -82,6 +87,12 @@ if (isDevelopment()) {
         console.warn('⚠️ Supabase connection test failed:', result.error);
         console.log('L\'application continuera de fonctionner. Vérifiez votre connexion réseau et les paramètres Supabase.');
         console.log('URL Supabase utilisée:', supabaseUrl);
+        
+        // Show a toast notification to the user
+        toast.error('Problème de connexion à la base de données. Certaines fonctionnalités peuvent être limitées.', {
+          duration: 5000,
+          position: 'top-center'
+        });
       }
     }).catch(err => {
       console.warn('⚠️ Erreur lors du test de connexion Supabase:', err);
@@ -89,3 +100,36 @@ if (isDevelopment()) {
     });
   }, 100);
 }
+
+// Helper function to handle Supabase errors gracefully
+export const handleSupabaseError = (error: any, fallbackMessage = 'Une erreur est survenue') => {
+  console.error('Supabase error:', error);
+  
+  // Determine appropriate error message
+  let errorMessage = fallbackMessage;
+  
+  if (error?.message) {
+    if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+      errorMessage = 'La requête a pris trop de temps. Veuillez réessayer.';
+    } else if (error.message.includes('fetch') || error.message.includes('network')) {
+      errorMessage = 'Problème de connexion au serveur. Vérifiez votre connexion internet.';
+    } else if (error.message.includes('JWT')) {
+      errorMessage = 'Votre session a expiré. Veuillez vous reconnecter.';
+    } else if (error.message.includes('permission') || error.message.includes('not authorized')) {
+      errorMessage = 'Vous n\'avez pas les permissions nécessaires pour cette action.';
+    } else if (error.message.includes('not found')) {
+      errorMessage = 'La ressource demandée n\'existe pas.';
+    } else {
+      // Use the actual error message if it's informative
+      errorMessage = error.message;
+    }
+  }
+  
+  // Show toast notification
+  toast.error(errorMessage, {
+    duration: 4000,
+    position: 'top-center'
+  });
+  
+  return errorMessage;
+};

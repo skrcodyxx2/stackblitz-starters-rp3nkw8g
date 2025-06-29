@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, LogOut } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -8,6 +8,7 @@ export default function Header() {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const location = useLocation();
   const { user, profile, signOut } = useAuth();
+  const navigate = useNavigate();
 
   const navigation = [
     { name: 'Accueil', href: '/' },
@@ -21,6 +22,7 @@ export default function Header() {
     try {
       await signOut();
       setIsUserMenuOpen(false);
+      navigate('/');
     } catch (error) {
       console.error('Error signing out:', error);
     }

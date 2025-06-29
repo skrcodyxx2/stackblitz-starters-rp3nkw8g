@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import Header from '../../components/common/Header';
 import Footer from '../../components/common/Footer';
@@ -263,105 +263,104 @@ export default function GalleryPage() {
             </div>
           )}
 
-          {albums.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-xl text-gray-600">
-                Aucun album disponible pour le moment.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {albums.map((album) => (
-                <div
-                  key={album.id}
-                  className="group relative overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-2"
-                  onClick={() => openAlbum(album)}
-                >
-                  <div className="aspect-w-16 aspect-h-12">
-                    <img
-                      src={album.cover_image_url || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'}
-                      alt={album.name}
-                      className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop';
-                      }}
-                    />
-                  </div>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300"></div>
-                  <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                    <h3 className="text-xl font-bold mb-2 text-shadow-md">{album.name}</h3>
-                    <p className="text-sm text-gray-200 mb-2 text-shadow-sm">{album.description}</p>
-                    {album.event_date && (
-                      <p className="text-xs text-gray-300 text-shadow-sm">{formatDate(album.event_date)}</p>
-                    )}
-                    <p className="text-xs text-gray-300 text-shadow-sm">{album.gallery_images?.length || 0} photos</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Album Modal */}
-      {selectedAlbum && (
-        <div className="fixed inset-0 bg-black bg-opacity-90 z-40 flex flex-col overflow-hidden">
-          {/* Header */}
-          <div className="flex items-center justify-between p-6 text-white">
-            <div>
-              <h2 className="text-2xl font-bold text-shadow-md">{selectedAlbum.name}</h2>
-              <p className="text-gray-300 text-shadow-sm">{selectedAlbum.description}</p>
-              {selectedAlbum.event_date && (
-                <p className="text-sm text-gray-400 text-shadow-sm">{formatDate(selectedAlbum.event_date)}</p>
-              )}
-            </div>
-            <button
-              onClick={closeAlbum}
-              className="text-white hover:text-gray-300 p-2 bg-black bg-opacity-50 rounded-full"
-              aria-label="Fermer l'album"
-            >
-              <X className="w-8 h-8" />
-            </button>
-          </div>
-
-          {/* Images Grid */}
-          <div className="flex-1 overflow-y-auto p-6">
-            {selectedAlbum.gallery_images && selectedAlbum.gallery_images.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {selectedAlbum.gallery_images
-                  .sort((a, b) => a.sort_order - b.sort_order)
-                  .map((image, index) => (
-                    <div
-                      key={image.id}
-                      className="relative group cursor-pointer"
-                      onClick={() => openLightbox(index)}
-                    >
+          {!selectedAlbum ? (
+            // Albums Grid View
+            albums.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-xl text-gray-600">
+                  Aucun album disponible pour le moment.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {albums.map((album) => (
+                  <div
+                    key={album.id}
+                    className="group relative overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer transform hover:-translate-y-2"
+                    onClick={() => openAlbum(album)}
+                  >
+                    <div className="aspect-w-16 aspect-h-12">
                       <img
-                        src={image.image_url}
-                        alt={image.caption || ''}
-                        className="w-full h-32 md:h-48 object-cover rounded-lg group-hover:opacity-80 transition-opacity duration-200"
+                        src={album.cover_image_url || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'}
+                        alt={album.name}
+                        className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop';
                         }}
                       />
-                      {image.caption && (
-                        <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white p-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          <p className="text-xs truncate text-shadow-sm">{image.caption}</p>
-                        </div>
-                      )}
                     </div>
-                  ))}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent opacity-70 group-hover:opacity-90 transition-opacity duration-300"></div>
+                    <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                      <h3 className="text-xl font-bold mb-2 text-shadow-md">{album.name}</h3>
+                      <p className="text-sm text-gray-200 mb-2 text-shadow-sm">{album.description}</p>
+                      {album.event_date && (
+                        <p className="text-xs text-gray-300 text-shadow-sm">{formatDate(album.event_date)}</p>
+                      )}
+                      <p className="text-xs text-gray-300 text-shadow-sm">{album.gallery_images?.length || 0} photos</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-white text-xl">Aucune image disponible dans cet album.</p>
+            )
+          ) : (
+            // Album Detail View
+            <div>
+              {/* Back button and album info */}
+              <div className="mb-8">
+                <button
+                  onClick={closeAlbum}
+                  className="flex items-center text-primary-600 hover:text-primary-800 font-medium mb-4 group"
+                  aria-label="Retour aux albums"
+                >
+                  <ArrowLeft className="w-5 h-5 mr-2 group-hover:-translate-x-1 transition-transform duration-200" />
+                  Retour aux albums
+                </button>
+                
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">{selectedAlbum.name}</h2>
+                <p className="text-gray-600 mb-1">{selectedAlbum.description}</p>
+                {selectedAlbum.event_date && (
+                  <p className="text-sm text-gray-500">{formatDate(selectedAlbum.event_date)}</p>
+                )}
               </div>
-            )}
-          </div>
+
+              {/* Images Grid */}
+              {selectedAlbum.gallery_images && selectedAlbum.gallery_images.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {selectedAlbum.gallery_images
+                    .sort((a, b) => a.sort_order - b.sort_order)
+                    .map((image, index) => (
+                      <div
+                        key={image.id}
+                        className="relative group cursor-pointer"
+                        onClick={() => openLightbox(index)}
+                      >
+                        <img
+                          src={image.image_url}
+                          alt={image.caption || ''}
+                          className="w-full h-32 md:h-48 object-cover rounded-lg group-hover:opacity-80 transition-opacity duration-200"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop';
+                          }}
+                        />
+                        {image.caption && (
+                          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-70 text-white p-2 rounded-b-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            <p className="text-xs truncate text-shadow-sm">{image.caption}</p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-64 bg-gray-100 rounded-lg">
+                  <p className="text-gray-500 text-xl">Aucune image disponible dans cet album.</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      )}
+      </section>
 
       {/* Lightbox - Completely separate from album view */}
       {selectedAlbum && selectedImageIndex !== null && selectedAlbum.gallery_images && (

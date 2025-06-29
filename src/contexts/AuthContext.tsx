@@ -1,15 +1,31 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '../lib/supabase';
-import type { Database } from '../types/database';
+import { signIn, signUp, signOut, getCurrentUser, updateProfile as updateUserProfile } from '../lib/auth.js';
 import toast from 'react-hot-toast';
 
-type Profile = Database['public']['Tables']['profiles']['Row'];
+interface User {
+  id: string;
+  email: string;
+  role: string;
+}
+
+interface Profile {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  phone: string | null;
+  role: 'admin' | 'employee' | 'client';
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+  is_active: boolean;
+  must_change_password: boolean;
+}
 
 interface AuthContextType {
   user: User | null;
   profile: Profile | null;
-  session: Session | null;
+  token: string | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, userData: Partial<Profile>) => Promise<void>;
@@ -30,155 +46,136 @@ export function useAuth() {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
+  const [token, setToken] = useState<string | null>(localStorage.getItem('auth_token'));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
+    // Récupérer l'utilisateur actuel si un token existe
+    const fetchCurrentUser = async () => {
+      if (!token) {
         setLoading(false);
+        return;
       }
-    });
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        await fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-        setLoading(false);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchProfile = async (userId: string) => {
-    const MAX_RETRIES = 3;
-    const INITIAL_TIMEOUT = 30000; // 30 seconds
-    
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        console.log(`Fetching profile for user ${userId} (attempt ${attempt}/${MAX_RETRIES})`);
-        
-        // Create an AbortController with a timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          controller.abort();
-        }, INITIAL_TIMEOUT);
-        
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userId)
-          .single()
-          .abortSignal(controller.signal);
-        
-        // Clear the timeout
-        clearTimeout(timeoutId);
+        const { data, error } = await getCurrentUser(token);
         
         if (error) {
-          console.error(`Error fetching profile (attempt ${attempt}):`, error);
-          
-          if (attempt === MAX_RETRIES) {
-            // On final attempt, show error to user
-            toast.error('Problème de connexion à votre profil. Veuillez réessayer plus tard.');
-            throw error;
-          }
-          
-          // Wait before retrying with exponential backoff
-          await new Promise(resolve => setTimeout(resolve, attempt * 2000));
-          continue;
+          console.error('Erreur lors de la récupération de l\'utilisateur:', error);
+          localStorage.removeItem('auth_token');
+          setToken(null);
+          setUser(null);
+          setProfile(null);
+          toast.error('Votre session a expiré. Veuillez vous reconnecter.');
+        } else if (data) {
+          setUser(data.user);
+          setProfile(data.profile);
         }
-        
-        console.log('Profile fetched successfully:', data);
-        setProfile(data);
-        return; // Success, exit the retry loop
-      } catch (error: any) {
-        console.error(`Error fetching profile (attempt ${attempt}):`, error);
-        
-        if (attempt === MAX_RETRIES) {
-          // On final attempt, continue with app but show warning
-          toast.error('Impossible de charger votre profil. Certaines fonctionnalités peuvent être limitées.');
-        } else {
-          // Wait before retrying with exponential backoff
-          await new Promise(resolve => setTimeout(resolve, attempt * 2000));
-        }
+      } catch (error) {
+        console.error('Erreur inattendue:', error);
+      } finally {
+        setLoading(false);
       }
-    }
-    
-    // Even if profile fetch fails, we should still allow the app to load
-    setLoading(false);
-  };
+    };
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    if (error) throw error;
-  };
+    fetchCurrentUser();
+  }, [token]);
 
-  const signUp = async (email: string, password: string, userData: Partial<Profile>) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          first_name: userData.first_name,
-          last_name: userData.last_name,
-          role: 'client'
-        }
+  const handleSignIn = async (email: string, password: string) => {
+    try {
+      const { data, error } = await signIn(email, password);
+      
+      if (error) throw error;
+      
+      if (data) {
+        setUser(data.user);
+        setProfile(data.profile);
+        setToken(data.token);
+        localStorage.setItem('auth_token', data.token);
+        toast.success('Connexion réussie !');
       }
-    });
-    
-    if (error) throw error;
-    
-    if (data.user) {
-      // Profile will be created by the database trigger
-      toast.success('Compte créé avec succès!');
+    } catch (error: any) {
+      console.error('Erreur de connexion:', error);
+      toast.error(error.message || 'Erreur lors de la connexion');
+      throw error;
     }
   };
 
-  const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+  const handleSignUp = async (email: string, password: string, userData: Partial<Profile>) => {
+    try {
+      const { data, error } = await signUp(email, password, userData);
+      
+      if (error) throw error;
+      
+      if (data) {
+        setUser(data.user);
+        setToken(data.token);
+        localStorage.setItem('auth_token', data.token);
+        
+        // Récupérer le profil complet
+        const profileResult = await getCurrentUser(data.token);
+        if (profileResult.data) {
+          setProfile(profileResult.data.profile);
+        }
+        
+        toast.success('Compte créé avec succès !');
+      }
+    } catch (error: any) {
+      console.error('Erreur d\'inscription:', error);
+      toast.error(error.message || 'Erreur lors de la création du compte');
+      throw error;
+    }
   };
 
-  const updateProfile = async (updates: Partial<Profile>) => {
-    if (!user) throw new Error('No user logged in');
+  const handleSignOut = async () => {
+    try {
+      if (token) {
+        await signOut(token);
+      }
+      
+      localStorage.removeItem('auth_token');
+      setToken(null);
+      setUser(null);
+      setProfile(null);
+      toast.success('Déconnexion réussie');
+    } catch (error: any) {
+      console.error('Erreur de déconnexion:', error);
+      toast.error(error.message || 'Erreur lors de la déconnexion');
+      throw error;
+    }
+  };
+
+  const handleUpdateProfile = async (updates: Partial<Profile>) => {
+    if (!user || !token) {
+      toast.error('Vous devez être connecté pour mettre à jour votre profil');
+      throw new Error('Non authentifié');
+    }
     
-    const { error } = await supabase
-      .from('profiles')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', user.id);
-    
-    if (error) throw error;
-    
-    // Refresh profile
-    await fetchProfile(user.id);
-    toast.success('Profil mis à jour avec succès!');
+    try {
+      const { data, error } = await updateUserProfile(user.id, updates, token);
+      
+      if (error) throw error;
+      
+      if (data) {
+        setProfile(prev => prev ? { ...prev, ...data } : data);
+        toast.success('Profil mis à jour avec succès !');
+      }
+    } catch (error: any) {
+      console.error('Erreur de mise à jour du profil:', error);
+      toast.error(error.message || 'Erreur lors de la mise à jour du profil');
+      throw error;
+    }
   };
 
   const value = {
     user,
     profile,
-    session,
+    token,
     loading,
-    signIn,
-    signUp,
-    signOut,
-    updateProfile,
+    signIn: handleSignIn,
+    signUp: handleSignUp,
+    signOut: handleSignOut,
+    updateProfile: handleUpdateProfile,
   };
 
   return (

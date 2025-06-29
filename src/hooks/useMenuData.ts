@@ -1,9 +1,36 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import type { Database } from '../types/database';
+import { menuCategoriesApi, menuItemsApi } from '../lib/api.js';
+import toast from 'react-hot-toast';
 
-type MenuCategory = Database['public']['Tables']['menu_categories']['Row'];
-type MenuItem = Database['public']['Tables']['menu_items']['Row'];
+interface MenuCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  image_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface MenuItem {
+  id: string;
+  category_id: string | null;
+  category_name?: string;
+  name: string;
+  description: string | null;
+  price: number | null;
+  image_url: string | null;
+  ingredients: string[] | null;
+  allergens: string[] | null;
+  preparation_time: number | null;
+  calories: number | null;
+  is_available: boolean;
+  is_festive: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
 
 export function useMenuData() {
   const [categories, setCategories] = useState<MenuCategory[]>([]);
@@ -13,37 +40,25 @@ export function useMenuData() {
 
   const fetchCategories = async () => {
     try {
-      const { data, error } = await supabase
-        .from('menu_categories')
-        .select('*')
-        .eq('is_active', true)
-        .order('sort_order');
+      const { data, error } = await menuCategoriesApi.getAll();
 
-      if (error) throw error;
+      if (error) throw new Error(error);
       setCategories(data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement des catégories');
+      toast.error('Erreur lors du chargement des catégories');
     }
   };
 
   const fetchMenuItems = async () => {
     try {
-      const { data, error } = await supabase
-        .from('menu_items')
-        .select(`
-          *,
-          menu_categories (
-            name,
-            id
-          )
-        `)
-        .eq('is_available', true)
-        .order('sort_order');
+      const { data, error } = await menuItemsApi.getAll();
 
-      if (error) throw error;
+      if (error) throw new Error(error);
       setMenuItems(data || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors du chargement du menu');
+      toast.error('Erreur lors du chargement du menu');
     }
   };
 

@@ -1,11 +1,11 @@
 {
-  "timestamp": "2025-06-29T06:56:27.632Z",
-  "duration": 0.018,
+  "timestamp": "2025-06-29T21:11:53.230Z",
+  "duration": 0.12,
   "summary": {
     "total": 77,
-    "passed": 77,
-    "failed": 0,
-    "successRate": 100
+    "passed": 75,
+    "failed": 2,
+    "successRate": 97.40259740259741
   },
   "details": [
     {
@@ -145,13 +145,13 @@
     },
     {
       "name": "Composant: Header.tsx",
-      "status": "PASSED",
-      "error": null
+      "status": "FAILED",
+      "error": "Import React manquant"
     },
     {
       "name": "Composant: Footer.tsx",
-      "status": "PASSED",
-      "error": null
+      "status": "FAILED",
+      "error": "Import React manquant"
     },
     {
       "name": "Composant: AdminLayout.tsx",
